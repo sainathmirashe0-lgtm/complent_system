@@ -1,3 +1,4 @@
+/* Reset & base */
 * {
   box-sizing: border-box;
   font-family: "Segoe UI", "Poppins", Arial, sans-serif;
@@ -8,13 +9,13 @@ body {
   min-height: 100vh;
   background: linear-gradient(135deg, #4f46e5, #9333ea);
   display: flex;
-  justify-content:center;
-  align-items:center ;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Main Card */
+/* Card */
 .container {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.95);
   padding: 35px 40px;
   width: 100%;
   max-width: 420px;
@@ -24,14 +25,8 @@ body {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 h2 {
@@ -39,9 +34,10 @@ h2 {
   margin-bottom: 25px;
   color: #1f2933;
   font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-/* Form Fields */
+/* Fields */
 .field {
   margin-bottom: 18px;
 }
@@ -75,6 +71,36 @@ textarea:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
 }
+video, canvas, img {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-top: 10px;
+  display: block;
+}
+
+#canvas {
+  display: none;
+}
+
+#preview {
+  display: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#startCam, #snap {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4f7df3;
+  color: white;
+  cursor: pointer;
+}
+
+#snap { background:#28a745; }
+
+
 
 /* Button */
 button {
