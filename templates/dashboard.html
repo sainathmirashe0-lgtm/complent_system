@@ -10,31 +10,53 @@
     <h2 class="logo">Dashboard</h2>
 
     <ul>
-      <li class="active">🏠 Overview</li>
-      <li>📊 Statistics</li>
+      <li class="active" onclick="showOverview()">🏠 Overview</li>
+      <li onclick="showStats()">📊 Statistics</li>
 
-      <li><a href="{{ url_for('index') }}">🧾 Complaint</a></li>
+      {% if is_admin %}
+        <li>🛡 Admin Panel</li>
+        <li><a href="{{ url_for('dashboard') }}">📋 All Complaints</a></li>
+      {% else %}
+        <li><a href="{{ url_for('index') }}">🧾 Submit Complaint</a></li>
+        <li><a href="{{ url_for('dashboard') }}">📄 My Complaints</a></li>
+      {% endif %}
 
-      
-        <li><a href="{{ url_for('login') }}">🔐 Login</a></li>
-        <li><a href="{{ url_for('register') }}">📝 Register</a></li>
-      
-        <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
-      
+      <li><a href="{{ url_for('logout') }}">🚪 Logout</a></li>
     </ul>
   </aside>
 
   <!-- Main -->
   <main>
 
+    <!-- Header -->
     <header>
       <input type="text" placeholder="Search..." />
-
       <div class="profile">
         <img src="{{ url_for('static', filename='user.png') }}" alt="User">
         <span>{{ session.get('user_role', 'User') }}</span>
       </div>
     </header>
+
+    <!-- Overview Section -->
+    <section id="overviewSection" class="content">
+      <div class="box">
+        <h3>Monthly Complaints</h3>
+        <canvas id="barChart"></canvas>
+      </div>
+
+      <div class="box">
+        <h3>Status</h3>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section id="statsSection" class="content" style="display:none;">
+      <div class="box" style="grid-column: 1 / -1;">
+        <h3>Statistics</h3>
+        <p>Statistics content here</p>
+      </div>
+    </section>
 
     <!-- Cards -->
     <section class="cards">
@@ -50,29 +72,84 @@
         </span>
       </div>
 
+      {% if is_admin %}
       <div class="card blue">
-        Users<br>
-        <span>1</span>
+        Pending<br>
+        <span>
+          {{ complaints | selectattr("status", "equalto", "Pending") | list | length }}
+        </span>
       </div>
+      {% endif %}
     </section>
 
-    <!-- Charts -->
+    <!-- Complaint Table -->
     <section class="content">
-      <div class="box">
-        <h3>Monthly Complaints</h3>
-        <canvas id="barChart"></canvas>
-      </div>
+      <div class="box" style="grid-column: 1 / -1;">
+        <h3>Complaints</h3>
 
-      <div class="box">
-        <h3>Status</h3>
-        <canvas id="pieChart"></canvas>
+        <table border="1" cellpadding="10" width="100%">
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            {% if is_admin %}
+              <th>Action</th>
+            {% endif %}
+          </tr>
+
+          {% for c in complaints %}
+          <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.category }}</td>
+            <td>{{ c.description }}</td>
+            <td>{{ c.status }}</td>
+
+            {% if is_admin %}
+            <td>
+              {% if c.status == "Pending" %}
+                <form method="POST" action="{{ url_for('update_status') }}" style="display:inline;">
+                  <input type="hidden" name="id" value="{{ c.id }}">
+                  <input type="hidden" name="status" value="Approved">
+                  <button type="submit">✅ Approve</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('update_status') }}" style="display:inline;">
+                  <input type="hidden" name="id" value="{{ c.id }}">
+                  <input type="hidden" name="status" value="Rejected">
+                  <button type="submit">❌ Reject</button>
+                </form>
+              {% else %}
+                Done
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </table>
       </div>
     </section>
 
   </main>
 </div>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Dashboard JS -->
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+<!-- Inline JS -->
+<script>
+function showOverview() {
+  document.getElementById("overviewSection").style.display = "grid";
+  document.getElementById("statsSection").style.display = "none";
+}
+
+function showStats() {
+  document.getElementById("overviewSection").style.display = "none";
+  document.getElementById("statsSection").style.display = "grid";
+}
+</script>
 
 {% endblock %}

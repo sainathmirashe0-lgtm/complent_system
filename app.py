@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from sqlalchemy import func
 import random
 
 # ---------------- APP SETUP ----------------
@@ -16,24 +17,20 @@ db = SQLAlchemy(app)
 # ---------------- MODELS ----------------
 class User(db.Model):
     __tablename__ = "users"
-
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="user")
-
     otp = db.Column(db.String(6))
     otp_expiry = db.Column(db.DateTime)
 
-
 class Complaint(db.Model):
     __tablename__ = "complaint"
-
     id = db.Column(db.Integer, primary_key=True)
     category = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(50), default="Pending")
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
 # ---------------- HELPERS ----------------
@@ -43,11 +40,10 @@ def is_admin():
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# ---------------- AUTH ROUTES ----------------
+# ---------------- REGISTER ----------------
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        name = request.form["name"]      # optional
         email = request.form["email"]
         password = request.form["password"]
         confirm = request.form["confirm"]
@@ -60,19 +56,16 @@ def register():
             flash("User already exists", "danger")
             return redirect(url_for("register"))
 
-        hashed_password = generate_password_hash(password)
-
-        user = User(email=email, password=hashed_password)
+        user = User(email=email, password=generate_password_hash(password))
         db.session.add(user)
         db.session.commit()
 
-        flash("Registration successful. Please login.", "success")
+        flash("Registration successful", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html")
 
-
-
+# ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -84,22 +77,20 @@ def login():
             session["user_role"] = user.role
             return redirect(url_for("dashboard"))
 
-        flash("Invalid email or password", "danger")
+        flash("Invalid login", "danger")
 
     return render_template("login.html")
-
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
-# ---------------- FORGOT PASSWORD + OTP ----------------
+# ---------------- FORGOT PASSWORD ----------------
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
         user = User.query.filter_by(email=request.form["email"]).first()
-
         if not user:
             flash("Email not found", "danger")
             return redirect(url_for("forgot_password"))
@@ -109,24 +100,25 @@ def forgot_password():
         user.otp_expiry = datetime.now() + timedelta(minutes=5)
         db.session.commit()
 
-        # Hackathon demo
-        print("OTP:", otp)
+        session["otp_email"] = user.email
+        print("OTP:", otp)  # demo
 
-        flash("OTP sent (check console)", "success")
         return redirect(url_for("verify_otp"))
 
     return render_template("forgot_password.html")
 
-
+# ---------------- VERIFY OTP ----------------
 @app.route("/verify-otp", methods=["GET", "POST"])
 def verify_otp():
-    if request.method == "POST":
-        email = request.form["email"]
-        otp = request.form["otp"]
+    email = session.get("otp_email")
+    if not email:
+        return redirect(url_for("forgot_password"))
 
+    if request.method == "POST":
+        otp = request.form["otp"]
         user = User.query.filter_by(email=email, otp=otp).first()
 
-        if not user or not user.otp_expiry:
+        if not user:
             flash("Invalid OTP", "danger")
             return redirect(url_for("verify_otp"))
 
@@ -137,29 +129,26 @@ def verify_otp():
         session["reset_user_id"] = user.id
         return redirect(url_for("reset_password"))
 
-    return render_template("verify_otp.html")
+    return render_template("verify_otp.html", email=email)
 
-
+# ---------------- RESEND OTP ----------------
 @app.route("/resend-otp", methods=["POST"])
 def resend_otp():
-    email = request.form["email"]
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        flash("Email not found", "danger")
+    email = session.get("otp_email")
+    if not email:
         return redirect(url_for("forgot_password"))
 
+    user = User.query.filter_by(email=email).first()
     otp = generate_otp()
     user.otp = otp
     user.otp_expiry = datetime.now() + timedelta(minutes=5)
     db.session.commit()
 
     print("Resent OTP:", otp)
-
-    flash("New OTP sent (check console)", "success")
+    flash("New OTP sent", "success")
     return redirect(url_for("verify_otp"))
 
-
+# ---------------- RESET PASSWORD ----------------
 @app.route("/reset-password", methods=["GET", "POST"])
 def reset_password():
     if "reset_user_id" not in session:
@@ -170,70 +159,77 @@ def reset_password():
         user.password = generate_password_hash(request.form["password"])
         user.otp = None
         user.otp_expiry = None
-
         db.session.commit()
-        session.clear()
 
-        flash("Password reset successful. Please login.", "success")
+        session.clear()
+        flash("Password reset successful", "success")
         return redirect(url_for("login"))
 
     return render_template("reset_password.html")
 
-# ---------------- COMPLAINT ROUTES ----------------
+# ---------------- COMPLAINT ----------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        complaint = Complaint(
+        db.session.add(Complaint(
             category=request.form["category"],
             description=request.form["description"],
             user_id=session["user_id"]
-        )
-        db.session.add(complaint)
+        ))
         db.session.commit()
-
-        flash("Complaint submitted successfully", "success")
         return redirect(url_for("dashboard"))
 
     return render_template("index.html")
 
-
+# ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    if is_admin():
-        complaints = Complaint.query.all()
-        users = User.query.all()
-    else:
-        complaints = Complaint.query.filter_by(user_id=session["user_id"]).all()
-        users = None
+    complaints = Complaint.query.all() if is_admin() else \
+        Complaint.query.filter_by(user_id=session["user_id"]).all()
 
-    return render_template(
-        "dashboard.html",
-        complaints=complaints,
-        users=users,
-        is_admin=is_admin()
-    )
+    return render_template("dashboard.html", complaints=complaints, is_admin=is_admin())
 
-# ---------------- ADMIN ACTION ----------------
+# ---------------- CHART DATA API ----------------
+@app.route("/api/dashboard-data")
+def dashboard_data():
+    query = Complaint.query
+    if not is_admin():
+        query = query.filter_by(user_id=session["user_id"])
+
+    status = dict(query.with_entities(
+        Complaint.status, func.count(Complaint.id)
+    ).group_by(Complaint.status).all())
+
+    monthly = [0]*12
+    for m, c in query.with_entities(
+        func.month(Complaint.created_at), func.count()
+    ).group_by(func.month(Complaint.created_at)):
+        monthly[m-1] = c
+
+    return jsonify({
+        "status": {
+            "Approved": status.get("Approved", 0),
+            "Pending": status.get("Pending", 0),
+            "Rejected": status.get("Rejected", 0),
+        },
+        "monthly": monthly
+    })
+
+# ---------------- ADMIN STATUS ----------------
 @app.route("/status", methods=["POST"])
 def update_status():
     if not is_admin():
-        flash("Unauthorized access", "danger")
         return redirect(url_for("dashboard"))
 
-    complaint_id = request.form["id"]
-    status = request.form["status"]
-
-    complaint = db.session.get(Complaint, complaint_id)
-    if complaint:
-        complaint.status = status
-        db.session.commit()
-
+    c = db.session.get(Complaint, request.form["id"])
+    c.status = request.form["status"]
+    db.session.commit()
     return redirect(url_for("dashboard"))
 
 # ---------------- RUN ----------------

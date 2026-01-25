@@ -3,51 +3,37 @@
 
 <h3>Verify OTP</h3>
 
-<div id="timerBox" class="alert alert-info">
-    OTP expires in <span id="timer">05:00</span>
+<div class="alert alert-info">
+  OTP expires in <span id="timer">05:00</span>
 </div>
 
 <form method="POST">
-  <input name="email" id="emailInput" class="form-control mb-2" placeholder="Email" required>
-  <input name="otp" class="form-control mb-2" placeholder="OTP" required>
+  <input name="otp" class="form-control mb-2" placeholder="Enter OTP" required>
   <button class="btn btn-success">Verify</button>
 </form>
 
 <hr>
 
 <form method="POST" action="{{ url_for('resend_otp') }}">
-    <input type="hidden" name="email" id="resendEmail">
-    <button id="resendBtn" class="btn btn-warning" disabled>Resend OTP</button>
+  <button id="resendBtn" class="btn btn-warning" disabled>🔁 Resend OTP</button>
 </form>
 
 <script>
-let time = 300; // 5 minutes in seconds
+let time = 300;
 let timer = document.getElementById("timer");
 let resendBtn = document.getElementById("resendBtn");
 
-function startTimer() {
-    let interval = setInterval(() => {
-        let min = Math.floor(time / 60);
-        let sec = time % 60;
-        timer.innerHTML = `${min}:${sec < 10 ? '0'+sec : sec}`;
+setInterval(() => {
+  let min = Math.floor(time / 60);
+  let sec = time % 60;
+  timer.innerHTML = `${min}:${sec < 10 ? '0'+sec : sec}`;
+  time--;
 
-        time--;
-
-        if (time < 0) {
-            clearInterval(interval);
-            timer.innerHTML = "Expired";
-            resendBtn.disabled = false;
-        }
-    }, 1000);
-}
-
-startTimer();
-
-// Sync email for resend
-document.getElementById("emailInput").addEventListener("input", function(){
-    document.getElementById("resendEmail").value = this.value;
-});
+  if (time < 0) {
+    resendBtn.disabled = false;
+    timer.innerHTML = "Expired";
+  }
+}, 1000);
 </script>
 
 {% endblock %}
-

@@ -1,30 +1,32 @@
-console.log("Dashboard loaded");
+fetch("/api/dashboard-data")
+.then(res => res.json())
+.then(data => {
 
-const bar = document.getElementById("barChart");
-if (bar) {
-  new Chart(bar, {
+  new Chart(document.getElementById("barChart"), {
     type: "bar",
     data: {
-      labels: ["Jan","Feb","Mar","Apr","May"],
+      labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
       datasets: [{
         label: "Complaints",
-        data: [5,8,6,10,7],
+        data: data.monthly,
         backgroundColor: "#4f46e5"
       }]
     }
   });
-}
 
-const pie = document.getElementById("pieChart");
-if (pie) {
-  new Chart(pie, {
+  new Chart(document.getElementById("pieChart"), {
     type: "doughnut",
     data: {
       labels: ["Approved","Pending","Rejected"],
       datasets: [{
-        data: [10,4,2],
+        data: [
+          data.status.Approved,
+          data.status.Pending,
+          data.status.Rejected
+        ],
         backgroundColor: ["#22c55e","#facc15","#ef4444"]
       }]
     }
   });
-}
+
+});
