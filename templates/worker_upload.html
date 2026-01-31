@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Upload Work Completion</h2>
+
+<p>
+  <b>Complaint:</b> {{ complaint.category }} <br>
+  <b>Description:</b> {{ complaint.description }}
+</p>
+
+<form method="POST" enctype="multipart/form-data">
+  <label>Upload completion photo</label><br><br>
+
+  <input type="file" name="work_image" required><br><br>
+
+  <button type="submit">Submit Work</button>
+</form>
+
+<a href="{{ url_for('worker_dashboard') }}">← Back</a>
+
+{% endblock %}

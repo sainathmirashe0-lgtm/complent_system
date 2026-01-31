@@ -4,13 +4,13 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 
 <div class="login-box">
-  <h2>🔐Login</h2>
+  <h2 class="a">Login</h2>
 
   <form method="POST" id="loginForm">
     <div class="field">
-      <label>Email</label>
+      <label>Email :</label>
       <input type="email" name="email" id="email" required>
-      <label>Password</label>
+      <label>Password :</label>
       <input type="password" name="password" id="password" required>
   
     </div>
@@ -24,13 +24,13 @@
     </div>
     
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
+    <!-- {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
           <p id="msg" class="{{ category }}">{{ message }}</p>
         {% endfor %}
       {% endif %}
-    {% endwith %}
+    {% endwith %} -->
   </form>
 </div>
 

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="box" style="max-width:400px;margin:40px auto;">
+  <h3>📷 Upload Profile Photo</h3>
+
+  {% if user.profile_photo %}
+    <img src="{{ url_for('static', filename=user.profile_photo) }}"
+         width="120"
+         style="border-radius:50%;margin-bottom:10px;">
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="photo" required class="form-control mb-3">
+    <button class="btn btn-primary w-100">Upload</button>
+  </form>
+
+  <br>
+  <a href="{{ url_for('profile') }}">← Back to Profile</a>
+</div>
+
+{% endblock %}

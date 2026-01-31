@@ -1,42 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Complaint System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/static/css/complient.css">
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/complient.css') }}">
 
 <div class="container">
   <h2>Submit a Complaint</h2>
 
-  <form id="complaintForm">
+  <form method="POST">
     <div class="field">
-      <label for="category">Category</label>
-      <input type="text" id="category" placeholder="e.g. Electricity, Water" required>
+      <label>Category</label>
+      <input type="text" name="category" placeholder="e.g. Electricity, Water" required>
     </div>
 
     <div class="field">
-      <label for="description">Description</label>
-      <textarea id="description" placeholder="Describe your problem..." required></textarea>
-    </div>
-
-    <!-- 📷 Webcam Section -->
-    <div class="field">
-      <label>Capture Photo</label>
-      <video id="video" autoplay></video>
-      <button type="button" id="startCam">Start Camera</button>
-      <button type="button" id="snap">Capture</button>
-      <canvas id="canvas"></canvas>
-      <img id="preview">
+      <label>Description</label>
+      <textarea name="description" placeholder="Describe your problem..." required></textarea>
     </div>
 
     <button type="submit">Submit Complaint</button>
-    <p id="msg" class="msg"></p>
   </form>
 </div>
 
-<script src="project.js"></script>
-</body>
-</html>
+<script src="{{ url_for('static', filename='js/project.js') }}"></script>
+
+{% endblock %}
+

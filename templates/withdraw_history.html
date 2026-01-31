@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="mb-3">Withdrawal History</h3>
+
+  {% if withdrawals %}
+  <table class="table table-bordered table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>Amount (₹)</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in withdrawals %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ w.amount }}</td>
+        <td>
+          {% if w.status == "Approved" %}
+            <span class="badge bg-success">Approved</span>
+          {% elif w.status == "Rejected" %}
+            <span class="badge bg-danger">Rejected</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Pending</span>
+          {% endif %}
+        </td>
+        <td>{{ w.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="alert alert-info">No withdrawal history found.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

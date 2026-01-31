@@ -1,0 +1,92 @@
+{% if is_admin %}
+<hr>
+
+<div class="box full mt-4">
+  <h3>💰 Worker Withdrawal Requests</h3>
+
+  {% if withdrawals %}
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle mt-3">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Worker ID</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for w in withdrawals %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ w.worker_id }}</td>
+          <td>₹ {{ w.amount }}</td>
+
+          <td>
+            <td>
+  {% if w.status == "Pending" %}
+
+    <form method="POST"
+          action="{{ url_for('approve_withdraw', id=w.id) }}"
+          style="display:inline;">
+      <button type="submit" class="btn btn-success btn-sm">
+        Approve
+      </button>
+    </form>
+
+    <form method="POST"
+          action="{{ url_for('reject_withdraw', id=w.id) }}"
+          style="display:inline;">
+      <button type="submit" class="btn btn-danger btn-sm">
+        Reject
+      </button>
+    </form>
+
+  {% else %}
+    <span class="badge bg-secondary">{{ w.status }}</span>
+  {% endif %}
+</td>
+
+          </td>
+
+          <td>{{ w.created_at.strftime("%d-%m-%Y") }}</td>
+
+          <td>
+            {% if w.status == "Pending" %}
+
+              <!-- ✅ APPROVE (POST ONLY) -->
+              <form action="{{ url_for('approve_withdraw', id=w.id) }}"
+                    method="POST"
+                    style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-success">
+                  ✅ Approve
+                </button>
+              </form>
+
+              <!-- ❌ REJECT (POST ONLY) -->
+              <form action="{{ url_for('reject_withdraw', id=w.id) }}"
+                    method="POST"
+                    style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-danger">
+                  ❌ Reject
+                </button>
+              </form>
+
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-muted">No withdrawal requests.</p>
+  {% endif %}
+</div>
+{% endif %}
+

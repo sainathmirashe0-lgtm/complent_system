@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='work_deshboard.css') }}">
+
+<h2>Worker Dashboard</h2>
+
+<!-- FLASH MESSAGES
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div style="padding:10px;margin-bottom:10px;
+                  background:#f8d7da;color:#721c24;">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %} -->
+
+{% if complaints %}
+
+<table>
+  <tr>
+    <th>No</th>
+    <th>Category</th>
+    <th>Description</th>
+    <th>Status</th>
+    <th>Action</th>
+    <th>salary</th>
+    <th>Withdraw</th>
+  </tr>
+
+  {% for c in complaints %}
+  <tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ c.category }}</td>
+    <td>{{ c.description }}</td>
+    <td>{{ c.status }}</td>
+   <td>
+  <a href="{{ url_for('worker_salary') }}" class="btn-assign">View Salary</a>
+</td>
+
+<td>
+  <a href="{{ url_for('withdraw') }}" class="btn-withdraw">💸 Withdraw</a>
+</td>
+
+<td>
+  <a href="{{ url_for('withdraw_history') }}" class="btn-history">
+    📜 History
+  </a>
+</td>
+
+  View Withdrawal History
+</a>
+</td>
+    <td>
+      {% if c.status != "Completed" %}
+      <form method="POST"
+      action="{{ url_for('worker_upload', id=c.id) }}"
+      enctype="multipart/form-data">
+
+  <label>Upload Work Completion Photo</label>
+
+  <input type="file" name="work_image" required>
+
+  <button type="submit" class="btn-assign">
+    ✅ Submit Work
+  </button>
+</form>
+
+      {% else %}
+        ✔ Completed
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% else %}
+<p>No work assigned.</p>
+{% endif %}
+
+{% endblock %}

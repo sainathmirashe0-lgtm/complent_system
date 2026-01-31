@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="box" style="max-width:400px;margin:40px auto;">
+  <h2>💸 Withdraw Salary</h2>
+
+  <p><b>Available Balance:</b> ₹ {{ balance }}</p>
+
+  <form method="POST">
+    <label>Enter Amount</label>
+    <input type="number"
+           name="amount"
+           max="{{ balance }}"
+           required>
+
+    <button class="box99 bo" style="margin-top:10px;">
+      Request Withdraw
+    </button>
+    <p><b>Available Balance:</b> ₹ {{ balance }}</p>
+    <p class="text-muted">
+     Note: Amount will be deducted after admin approval.
+    </p>
+
+  </form>
+</div>
+
+{% endblock %}
