@@ -6,19 +6,34 @@
 <div class="container">
   <h2>Submit a Complaint</h2>
 
-  <form method="POST">
-    <div class="field">
-      <label>Category</label>
-      <input type="text" name="category" placeholder="e.g. Electricity, Water" required>
-    </div>
+  <form method="POST" enctype="multipart/form-data">
 
-    <div class="field">
-      <label>Description</label>
-      <textarea name="description" placeholder="Describe your problem..." required></textarea>
-    </div>
+  <div class="field">
+    <label>Category</label>
+    <input type="text" name="category" required>
+  </div>
 
-    <button type="submit">Submit Complaint</button>
-  </form>
+  <div class="field">
+    <label>Description</label>
+    <textarea name="description" required></textarea>
+  </div>
+
+  <!-- Live Camera -->
+  <div class="field">
+    <label>Live Photo</label><br>
+    <video id="video" width="300" autoplay></video><br>
+    <button type="button" id="snap">Capture Photo</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <input type="hidden" name="photoData" id="photoData">
+  </div>
+
+  <!-- GPS Location -->
+  <input type="hidden" name="latitude" id="latitude">
+  <input type="hidden" name="longitude" id="longitude">
+
+  <button type="submit">Submit Complaint</button>
+</form>
+
 </div>
 
 <script src="{{ url_for('static', filename='js/project.js') }}"></script>

@@ -1,32 +1,41 @@
-fetch("/api/dashboard-data")
-.then(res => res.json())
-.then(data => {
+const overviewSection = document.getElementById("overviewSection");
+const complaintsSection = document.getElementById("complaintsSection");
+const withdrawSection = document.getElementById("withdrawSection");
 
-  new Chart(document.getElementById("barChart"), {
-    type: "bar",
-    data: {
-      labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-      datasets: [{
-        label: "Complaints",
-        data: data.monthly,
-        backgroundColor: "#4f46e5"
-      }]
+function hideAll() {
+    overviewSection.classList.remove("active");
+    complaintsSection.classList.remove("active");
+    withdrawSection?.classList.remove("active");
+}
+
+function showOverview() {
+    hideAll();
+    overviewSection.classList.add("active");
+}
+
+function showComplaints() {
+    hideAll();
+    complaintsSection.classList.add("active");
+}
+
+function showWithdrawals() {
+    hideAll();
+    withdrawSection.classList.add("active");
+}
+
+/* Charts */
+new Chart(barChart,{
+    type:"bar",
+    data:{
+        labels:["Jan","Feb","Mar","Apr","May","Jun"],
+        datasets:[{label:"Complaints",data:[4,6,7,2,5,7]}]
     }
-  });
+});
 
-  new Chart(document.getElementById("pieChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Approved","Pending","Rejected"],
-      datasets: [{
-        data: [
-          data.status.Approved,
-          data.status.Pending,
-          data.status.Rejected
-        ],
-        backgroundColor: ["#22c55e","#facc15","#ef4444"]
-      }]
+new Chart(pieChart,{
+    type:"doughnut",
+    data:{
+        labels:["Approved","Pending"],
+        datasets:[{data:[70,30]}]
     }
-  });
-
 });

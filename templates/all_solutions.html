@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/all_solutions.css') }}">  
+<div class="solutions-container">
+  <h2 class="solutions-title">All Solutions</h2>
+
+  <table class="solutions-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Solution</th>
+        <th>Reactions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for s in solutions %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.category }}</td>
+        <td>{{ s.solution }}</td>
+
+        <!-- ✅ LIKE / DISLIKE INSIDE LOOP -->
+        <td>
+          <form method="POST"
+                action="{{ url_for('like_solution', id=s.id) }}"
+                style="display:inline;">
+            <button class="like-btn">👍 {{ s.likes }}</button>
+          </form>
+
+          <form method="POST"
+                action="{{ url_for('dislike_solution', id=s.id) }}"
+                style="display:inline;">
+            <button class="dislike-btn">👎 {{ s.dislikes }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

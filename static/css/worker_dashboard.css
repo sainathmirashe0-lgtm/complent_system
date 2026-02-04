@@ -1,0 +1,64 @@
+.page-title {
+  margin: 20px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.work-table {
+  width: 95%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.work-table th,
+.work-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.work-table thead {
+  background: #1e293b;
+  color: #fff;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.badge.completed {
+  background: #16a34a;
+  color: white;
+}
+
+.badge.pending {
+  background: #facc15;
+}
+
+.btn-submit,
+.btn-salary,
+.btn-withdraw,
+.btn-history {
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-submit { background: #2563eb; color: white; }
+.btn-salary { background: #0ea5e9; color: white; }
+.btn-withdraw { background: #dc2626; color: white; }
+.btn-history { background: #475569; color: white; }
+
+.btn-submit:hover,
+.btn-salary:hover,
+.btn-withdraw:hover,
+.btn-history:hover {
+  opacity: 0.85;
+}

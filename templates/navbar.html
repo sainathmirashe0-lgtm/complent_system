@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+{% block content %}
+
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/navbar.css') }}">
+<!-- ================= TOP GOV BAR ================= -->
+<div class="gov-bar">
+  <span>An official website of the Government of India</span>
+  <div id="google_translate_element"></div>
+</div>
+
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar">
+  <div class="navbar-inner">
+
+    <div class="nav-left">
+      <img src="/static/img/image1.png" alt="Gov Logo">
+      <span>Public Complaint Management System</span>
+    </div>
+    
+    <ul class="nav-menu">
+      <li><a href="#" onclick="showSection(event,'home')">Home</a></li>
+      <li><a href="#" onclick="showSection(event,'about')">About Portal</a></li>
+      <li><a href="#" onclick="showSection(event,'services')">Services</a></li>
+      <li><a href="#" onclick="showSection(event,'contact')">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="{{ url_for('login') }}" class="login">Login</a>
+      <a href="{{ url_for('register') }}" class="register">Register</a>
+    </div>
+    
+
+  </div>
+</nav>
+
+<!-- ================= HOME ================= -->
+<section id="home" class="page-section active-section">
+
+  <!-- HERO -->
+  <section class="hero-hhs">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>Complaint Management System</h1>
+        <p>
+          A unified platform to register, track, and resolve public service
+          complaints related to roads, water supply, electricity, and sanitation.
+        </p>
+      </div>
+      <div class="hero-image">
+        <img src="/static/img/image2.png" alt="Complaint Management Illustration">
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section class="quick-start">
+    <div class="container">
+      <h2>Get Started Quickly</h2>
+      <p class="quick-desc">
+        Submit and track public service complaints in a few simple steps.
+      </p>
+
+      <div class="quick-actions">
+        <a href="{{ url_for('register') }}" class="btn-primary">Register Complaint</a>
+        <a href="{{ url_for('dashboard') }}" class="btn-outline">Track Complaint</a>
+        <a href="#" class="btn-outline">Departments</a>
+      </div>
+
+      <div class="quick-steps">
+        <div class="step-card"><span>1</span><p>Submit Complaint</p></div>
+        <div class="step-card"><span>2</span><p>Department Review</p></div>
+        <div class="step-card"><span>3</span><p>Resolution</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHOTO GRID -->
+  <section class="photo-grid-section">
+    <h3 class="sai">OUR SERVICES</h3>
+    <div class="photo-grid">
+
+      <div class="photo-card">
+        <img src="/static/img/roadcontruction.png">
+        <div class="photo-overlay"><h3>Road Repair & Maintenance</h3></div>
+      </div>
+
+      <div class="photo-card">
+        <img src="/static/img/waterpipe.png">
+        <div class="photo-overlay"><h3>Water Supply Issues</h3></div>
+      </div>
+
+      <div class="photo-card">
+        <img src="/static/img/eletricpole1.png">
+        <div class="photo-overlay"><h3>Electricity Problems</h3></div>
+      </div>
+
+      <div class="photo-card">
+        <img src="/static/img/cleanig1.png">
+        <div class="photo-overlay"><h3>Cleaning & Sanitation</h3></div>
+      </div>
+
+      <div class="photo-card">
+        <img src="/static/img/image.png">
+        <div class="photo-overlay"><h3>Solid Waste Management</h3></div>
+      </div>
+
+      <div class="photo-card">
+        <img src="/static/img/cityclean.png">
+        <div class="photo-overlay"><h3>Community Cleanliness Drive</h3></div>
+      </div>
+
+    </div>
+  </section>
+   <section class="services">
+    <div class="container services-grid">
+      <a class="service-card" href="{{ url_for('index') }}">📝 Register Complaint</a>
+      <a class="service-card" href="{{ url_for('dashboard') }}">🔍 Track Status</a>
+      <div class="service-card" onclick="showSection(event,'services')">🏢 Departments</div>
+      <div class="service-card" onclick="showSection(event,'contact')">❓ Help / FAQ</div>
+    </div>
+  </section>
+
+  <!-- ================= HOW IT WORKS ================= -->
+  <section class="how">
+    <div class="container">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">1️⃣ Submit Complaint</div>
+        <div class="step">2️⃣ Department Review</div>
+        <div class="step">3️⃣ Resolution</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STATS ================= -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div>
+        <h3>1,25,430</h3>
+        <p>Complaints Received</p>
+      </div>
+      <div>
+        <h3>1,10,210</h3>
+        <p>Resolved</p>
+      </div>
+      <div>
+        <h3>15 Days</h3>
+        <p>Avg Resolution Time</p>
+      </div>
+    </div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="gov-footer">
+
+  <!-- TOP FOOTER -->
+  <div class="footer-top">
+    <div class="footer-container">
+
+      <!-- QUICK LINKS -->
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/register">Register Complaint</a></li>
+          <li><a href="/track">Track Complaint</a></li>
+          <li><a href="/departments">Departments</a></li>
+          <li><a href="/login">Login</a></li>
+        </ul>
+      </div>
+
+      <!-- CITIZEN SERVICES -->
+      <div class="footer-col">
+        <h4>Citizen Services</h4>
+        <ul>
+          <li><a href="#">Roads & Infrastructure</a></li>
+          <li><a href="#">Water Supply</a></li>
+          <li><a href="#">Electricity</a></li>
+          <li><a href="#">Sanitation</a></li>
+        </ul>
+      </div>
+
+      <!-- IMPORTANT LINKS -->
+      <div class="footer-col">
+        <h4>Important Links</h4>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms & Conditions</a></li>
+          <li><a href="#">Accessibility Statement</a></li>
+          <li><a href="#">Disclaimer</a></li>
+        </ul>
+      </div>
+
+      <!-- CONTACT INFO -->
+      <div class="footer-col">
+        <h4>Contact Information</h4>
+        <p>
+          📍 Maharashtra, India<br>
+          📧 support@complaintsystem.in<br>
+          ☎ Toll Free: 1800-XXX-XXXX<br>
+          🕘 Working Hours: 9:30 AM – 6:00 PM
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM FOOTER -->
+  <div class="footer-bottom">
+    <p>
+      © 2026 Public Complaint Management System |
+      Developed by <b>Sainath Mirashe</b><br>
+      This website is designed for educational and public service purposes.
+    </p>
+  </div>
+ </footer>
+</section>
+</section>
+<!-- ================= ABOUT ================= -->
+<section id="about" class="page-section">
+ 
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <h1>About the Portal</h1>
+    <p>
+    The <strong>Public Complaint Management System (PCMS)</strong> is an online platform developed to provide citizens
+    with a simple, transparent, and effective mechanism for registering and resolving public grievances.
+  </p>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <h2>About the Public Complaint Management System</h2>
+  <p>
+    The <strong>Public Complaint Management System (PCMS)</strong> is an online platform developed to provide citizens
+    with a simple, transparent, and effective mechanism for registering and resolving public grievances.
+  </p>
+  <p>
+    This portal enables citizens to submit complaints related to public services and government departments from
+    anywhere, at any time, without the need to visit offices physically.
+  </p>
+
+  <h2>Objective of the Portal</h2>
+  <ul>
+    <li>To provide a single-window platform for public grievance registration</li>
+    <li>To ensure time-bound redressal of complaints</li>
+    <li>To enhance transparency and accountability in public service delivery</li>
+    <li>To improve communication between citizens and government departments</li>
+  </ul>
+
+  <h2>Key Features</h2>
+  <ul>
+    <li>Online complaint registration</li>
+    <li>Real-time complaint tracking</li>
+    <li>Department-wise complaint routing</li>
+    <li>Status updates through the portal</li>
+    <li>Secure login for users and officials</li>
+    <li>Protection of personal data and privacy</li>
+  </ul>
+
+  <h2>Who Can Use This Portal?</h2>
+  <ul>
+    <li>Citizens who wish to report issues related to public services</li>
+    <li>Government officials responsible for complaint resolution</li>
+    <li>Administrators monitoring grievance redressal performance</li>
+  </ul>
+
+  <h2>How the Portal Works</h2>
+  <ul>
+    <li>The citizen registers a complaint through the portal</li>
+    <li>The complaint is forwarded to the concerned department</li>
+    <li>The department reviews and takes necessary action</li>
+    <li>The status of the complaint is updated on the portal</li>
+    <li>The citizen can track progress and provide feedback</li>
+  </ul>
+
+  <h2>Data Security & Privacy</h2>
+  <p>
+    The portal follows standard security practices to ensure that all personal information and complaint details
+    are kept confidential and accessible only to authorized users.
+  </p>
+
+  <h2>Commitment to Citizens</h2>
+  <p>
+    The Public Complaint Management System is committed to delivering efficient, transparent, and citizen-centric
+    grievance redressal services, strengthening trust between citizens and the government.
+  </p>
+
+</div>
+</section>
+
+<!-- ================= SERVICES PAGE ================= -->
+<section id="services" class="page-section">
+
+  <div class="services-hero">
+    <h1>Our Services</h1>
+    <p>
+      We provide a single platform to register, track, and resolve
+      public service-related complaints efficiently.
+    </p>
+  </div>
+
+  <div class="container service-list">
+
+    <div class="service-box">
+      <h3>🛣 Road & Infrastructure</h3>
+      <p>Potholes, damaged roads, footpaths, bridges, and street maintenance.</p>
+    </div>
+
+    <div class="service-box">
+      <h3>🚰 Water Supply</h3>
+      <p>Water leakage, low pressure, pipeline damage, and supply issues.</p>
+    </div>
+
+    <div class="service-box">
+      <h3>⚡ Electricity</h3>
+      <p>Power outages, broken electric poles, street lights, and wiring faults.</p>
+    </div>
+
+    <div class="service-box">
+      <h3>🧹 Cleaning & Sanitation</h3>
+      <p>Garbage collection, waste management, drainage, and public cleanliness.</p>
+    </div>
+
+    <div class="service-box">
+      <h3>🏘 Public Amenities</h3>
+      <p>Parks, public toilets, bus stops, and community infrastructure.</p>
+    </div>
+
+    <div class="service-box">
+      <h3>🏢 Other Public Services</h3>
+      <p>Any other civic issues not covered above.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact" class="page-section">
+  <div class="container contact-section">
+
+    <h1>Contact Us</h1>
+    <p class="contact-subtitle">
+      We are here to help you. Reach out to us for complaint support, technical
+      assistance, or general queries.
+    </p>
+
+    <div class="contact-grid">
+
+      <!-- CONTACT INFO -->
+      <div class="contact-card">
+        <h3>📞 Helpline Support</h3>
+        <p><strong>Toll Free:</strong> 1800-XXX-XXXX</p>
+        <p><strong>Working Hours:</strong><br>
+          Monday – Friday<br>
+          9:00 AM – 6:00 PM
+        </p>
+      </div>
+
+      <div class="contact-card">
+        <h3>📧 Email Support</h3>
+        <p>
+          <strong>General Queries:</strong><br>
+          <a href="mailto:sainathmirashe0@gmail.com">
+            sainathmirashe0@gmail.com
+          </a>
+        </p>
+        <p>
+          <strong>Complaint Support:</strong><br>
+          <a href="mailto:support@gov.in">
+            support@gov.in
+          </a>
+        </p>
+      </div>
+
+      <div class="contact-card">
+        <h3>🏢 Office Address</h3>
+        <p>
+          Public Complaint Management System<br>
+          Government Office Building<br>
+          New Delhi – 110001<br>
+          India
+        </p>
+      </div>
+
+    </div>
+
+    <!-- IMPORTANT NOTE -->
+    <div class="contact-note">
+      <p>
+        ⚠️ Please do not share sensitive personal information such as Aadhaar
+        number, bank details, or passwords through email.
+      </p>
+    </div>
+
+  </div>
+
+<!-- MAP SECTION -->
+  <div class="contact-map">
+    <h3>📍 Our Location</h3>
+
+    <iframe
+      src="https://www.google.com/maps?q=New+Delhi+India&output=embed"
+      width="100%"
+      height="350"
+      style="border:0;"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
+</section>
+
+
+<!-- ================= JS ================= -->
+<script>
+  function showSection(e, sectionId) {
+    e.preventDefault();
+
+    document.querySelectorAll('.page-section').forEach(sec => {
+      sec.classList.remove('active-section');
+    });
+
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+      link.classList.remove('active');
+    });
+
+    document.getElementById(sectionId).classList.add('active-section');
+    e.target.classList.add('active');
+  }
+</script>
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement(
+      {
+        pageLanguage: 'en',
+        includedLanguages: 'en,hi,mr',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+      },
+      'google_translate_element'
+    );
+  }
+</script>
+
+<script type="text/javascript" 
+  src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit">
+</script>
+<script>
+function showSection(event, sectionId) {
+  event.preventDefault(); // stops page reload
+
+  // hide all sections
+  document.querySelectorAll('.page-section').forEach(section => {
+    section.classList.remove('active-section');
+  });
+
+  // remove active class from menu
+  document.querySelectorAll('.nav-menu a').forEach(link => {
+    link.classList.remove('active');
+  });
+
+  // show selected section
+  document.getElementById(sectionId).classList.add('active-section');
+
+  // activate clicked menu
+  event.target.classList.add('active');
+}
+</script>
+
+
+
+
+{% endblock %}

@@ -13,13 +13,15 @@
            max="{{ balance }}"
            required>
 
-    <button class="box99 bo" style="margin-top:10px;">
-      Request Withdraw
-    </button>
-    <p><b>Available Balance:</b> ₹ {{ balance }}</p>
-    <p class="text-muted">
-     Note: Amount will be deducted after admin approval.
-    </p>
+     <button class="box99 bo" style="margin-top:10px;">
+        Request Withdraw
+     </button>
+      <p><b>Total Earned:</b> ₹ {{ data.salary }}</p>
+      <p><b>Withdrawable Balance:</b> ₹ {{ balance }}</p>
+
+      <p class="text-muted">
+        Note: Amount will be deducted after admin approval.
+     </p>
 
   </form>
 </div>

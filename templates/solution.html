@@ -155,13 +155,13 @@
 
     <form method="post">
       <label>Full Name</label>
-      <input type="text" placeholder="Enter your name" required>
+      <input type="text" name="name" placeholder="Enter Your Name" required>
 
       <label>Email</label>
-      <input type="email" placeholder="Enter your email" required>
+      <input type="email" name="email" placeholder="Enter your email" required>
 
       <label>Problem Category</label>
-      <select required>
+      <select name="category" required>
         <option>Road</option>
         <option>Water</option>
         <option>Electricity</option>
@@ -169,8 +169,8 @@
         <option>Other</option>
       </select>
 
-      <label>Solution</label>
-      <textarea rows="5" placeholder="Describe your problem or solution..." required></textarea>
+      <textarea name="solution" rows="5"
+          placeholder="Describe your problem or solution..." required></textarea>
 
       <button type="submit">Submit</button>
     </form>

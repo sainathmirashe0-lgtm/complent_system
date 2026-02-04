@@ -1,0 +1,98 @@
+/* ===== PAGE CONTAINER ===== */
+.solutions-container {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+/* ===== TITLE ===== */
+.solutions-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* ===== TABLE WRAPPER ===== */
+.table-wrapper {
+  overflow-x: auto;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+/* ===== TABLE ===== */
+.solutions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+/* ===== TABLE HEADER ===== */
+.solutions-table thead {
+  background: #4f7df3;
+  color: #ffffff;
+}
+
+.solutions-table th,
+.solutions-table td {
+  padding: 14px 12px;
+  text-align: left;
+}
+
+/* ===== ROWS ===== */
+.solutions-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.solutions-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.solutions-table tbody tr:hover {
+  background: #eef2ff;
+}
+
+/* ===== SOLUTION TEXT ===== */
+.solution-text {
+  max-width: 420px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* ===== NO DATA ===== */
+.no-data {
+  text-align: center;
+  color: #64748b;
+  margin-top: 40px;
+  font-size: 15px;
+}
+.like-btn,
+.dislike-btn {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.like-btn:hover {
+  color: #16a34a;
+}
+
+.dislike-btn:hover {
+  color: #dc2626;
+}
+
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .solutions-title {
+    font-size: 22px;
+  }
+
+  .solution-text {
+    max-width: none;
+  }
+}

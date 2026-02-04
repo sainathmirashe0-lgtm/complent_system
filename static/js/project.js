@@ -1,25 +1,47 @@
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
-const preview = document.getElementById("preview");
-const startCamBtn = document.getElementById("startCam");
-const snapBtn = document.getElementById("snap");
+const snap = document.getElementById("snap");
+const photoInput = document.getElementById("photoData");
 
-startCamBtn.onclick = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+// Start camera
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
     video.srcObject = stream;
-  } catch (err) {
+  })
+  .catch(err => {
     alert("Camera access denied!");
-  }
-};
+  });
 
-snapBtn.onclick = () => {
-  const context = canvas.getContext("2d");
+// Capture photo
+snap.addEventListener("click", () => {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+  photoInput.value = canvas.toDataURL("image/png");
+});
 
-  const imageData = canvas.toDataURL("image/png");
-  preview.src = imageData;
-  preview.style.display = "block";
-};
+// Get GPS location
+navigator.geolocation.getCurrentPosition(
+  position => {
+    document.getElementById("latitude").value = position.coords.latitude;
+    document.getElementById("longitude").value = position.coords.longitude;
+  },
+  error => {
+    alert("Location access denied!");
+  }
+);
+snap.addEventListener("click", () => {
+  const maxWidth = 640;
+  const scale = maxWidth / video.videoWidth;
+
+  canvas.width = maxWidth;
+  canvas.height = video.videoHeight * scale;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // JPEG with compression (IMPORTANT)
+  photoInput.value = canvas.toDataURL("image/jpeg", 0.6);
+});
+
