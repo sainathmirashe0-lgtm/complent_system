@@ -6,37 +6,88 @@
 <div class="container">
   <h2>Submit a Complaint</h2>
 
+  <!-- 🚫 ADMIN BLOCK MESSAGE -->
+  {% if session.get("user_role") == "admin" %}
+    <div class="alert alert-warning">
+      🚫 <strong>Admin is not allowed to submit complaints.</strong><br>
+      Please use a normal user account.
+    </div>
+
+  {% else %}
+
+  <!-- ✅ COMPLAINT FORM (ONLY FOR USERS) -->
   <form method="POST" enctype="multipart/form-data">
 
-  <div class="field">
-    <label>Category</label>
-    <input type="text" name="category" required>
-  </div>
+    <!-- CATEGORY -->
+    <div class="field">
+      <label>Category</label>
+      <select name="category" id="category" onchange="toggleOther()" required>
+        <option value="">-- Select Category --</option>
+        <option value="Water">Water</option>
+        <option value="Electricity">Electricity</option>
+        <option value="Road">Road</option>
+        <option value="Garbage">Garbage</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
 
-  <div class="field">
-    <label>Description</label>
-    <textarea name="description" required></textarea>
-  </div>
+    <!-- OTHER CATEGORY -->
+    <div class="field" id="otherBox" style="display:none;">
+      <label>Other Complaint</label>
+      <input type="text" name="other_complaint" placeholder="Enter your other complaint">
+    </div>
 
-  <!-- Live Camera -->
-  <div class="field">
-    <label>Live Photo</label><br>
-    <video id="video" width="300" autoplay></video><br>
-    <button type="button" id="snap">Capture Photo</button>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <input type="hidden" name="photoData" id="photoData">
-  </div>
+    <!-- DESCRIPTION -->
+    <div class="field">
+      <label>Description</label>
+      <textarea name="description" required></textarea>
+    </div>
 
-  <!-- GPS Location -->
-  <input type="hidden" name="latitude" id="latitude">
-  <input type="hidden" name="longitude" id="longitude">
+    <!-- ⭐ REWARD POINTS DISCOUNT (CORRECT PLACE) -->
+    <div class="field">
+      {% if user.reward_points|default(0) >= 10 %}
+        <label>
+          <input type="checkbox" name="use_points" value="yes">
+          Use 10 points to get ₹50 discount
+        </label>
+        <br>
+        <small class="text-muted">
+          Available points: {{ user.reward_points }}
+        </small>
+      {% else %}
+        <small class="text-muted">
+          You need at least 10 reward points to get a discount.
+          <br>
+          Current points: {{ user.reward_points|default(0) }}
+        </small>
+      {% endif %}
+    </div>
 
-  <button type="submit">Submit Complaint</button>
-</form>
+    <!-- LIVE CAMERA -->
+    <div class="field">
+      <label>Live Photo</label><br>
+      <video id="video" width="300" autoplay></video><br>
+      <button type="button" id="snap">Capture Photo</button>
+      <canvas id="canvas" style="display:none;"></canvas>
+      <input type="hidden" name="photoData" id="photoData">
+    </div>
 
+    <!-- SUBMIT -->
+    <button type="submit">Submit Complaint</button>
+
+  </form>
+
+  {% endif %}
 </div>
 
 <script src="{{ url_for('static', filename='js/project.js') }}"></script>
 
-{% endblock %}
+<script>
+function toggleOther() {
+  let category = document.getElementById("category").value;
+  let otherBox = document.getElementById("otherBox");
+  otherBox.style.display = (category === "Other") ? "block" : "none";
+}
+</script>
 
+{% endblock %}

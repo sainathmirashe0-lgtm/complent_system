@@ -2,91 +2,273 @@
 <hr>
 
 <div class="box full mt-4">
-  <h3>💰 Worker Withdrawal Requests</h3>
+  <h3 class="mb-2">💰 Worker Withdrawal Requests</h3>
+  <p class="text-muted mb-3">
+    Review worker payout details carefully before approving.
+  </p>
 
   {% if withdrawals %}
   <div class="table-responsive">
-    <table class="table table-striped table-bordered align-middle mt-3">
-      <thead class="table-dark">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark text-center">
         <tr>
           <th>#</th>
-          <th>Worker ID</th>
+          <th>Worker</th>
+          <th>Payment Details</th>
           <th>Amount</th>
           <th>Status</th>
-          <th>Date</th>
-          <th>Action</th>
+          <th>Requested On</th>
+          <th>Admin Action</th>
         </tr>
       </thead>
 
       <tbody>
-        {% for w in withdrawals %}
+        {% for w, worker, bank in withdrawals %}
         <tr>
-          <td>{{ loop.index }}</td>
-          <td>{{ w.worker_id }}</td>
-          <td>₹ {{ w.amount }}</td>
+          <td class="text-center">{{ loop.index }}</td>
 
+          <!-- 👤 WORKER INFO -->
           <td>
-            <td>
-  {% if w.status == "Pending" %}
-
-    <form method="POST"
-          action="{{ url_for('approve_withdraw', id=w.id) }}"
-          style="display:inline;">
-      <button type="submit" class="btn btn-success btn-sm">
-        Approve
-      </button>
-    </form>
-
-    <form method="POST"
-          action="{{ url_for('reject_withdraw', id=w.id) }}"
-          style="display:inline;">
-      <button type="submit" class="btn btn-danger btn-sm">
-        Reject
-      </button>
-    </form>
-
-  {% else %}
-    <span class="badge bg-secondary">{{ w.status }}</span>
-  {% endif %}
-</td>
-
+            <b>ID:</b> {{ worker.id }}<br>
+            <small class="text-muted">
+              {{ worker.name if worker.name else 'Worker' }}
+            </small>
           </td>
 
-          <td>{{ w.created_at.strftime("%d-%m-%Y") }}</td>
-
+          <!-- 💳 BANK / UPI INFO -->
           <td>
-            {% if w.status == "Pending" %}
+            <b>Bank:</b> {{ bank.bank_name }}<br>
+            <b>Holder:</b> {{ bank.account_holder }}<br>
+            <b>Account:</b> **** {{ bank.account_number[-4:] }}<br>
+            <b>IFSC:</b> {{ bank.ifsc_code }}<br>
+            <b>UPI:</b> {{ bank.upi_id or '—' }}
+          </td>
 
-              <!-- ✅ APPROVE (POST ONLY) -->
-              <form action="{{ url_for('approve_withdraw', id=w.id) }}"
-                    method="POST"
-                    style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-success">
-                  ✅ Approve
-                </button>
-              </form>
+          <!-- 💰 AMOUNT -->
+          <td class="text-center">
+            <span class="fw-bold text-success">
+              ₹ {{ w.amount }}
+            </span>
 
-              <!-- ❌ REJECT (POST ONLY) -->
-              <form action="{{ url_for('reject_withdraw', id=w.id) }}"
-                    method="POST"
-                    style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-danger">
-                  ❌ Reject
-                </button>
-              </form>
-
-            {% else %}
-              —
+            {% if w.amount < 500 %}
+            <div class="text-danger small">
+              ⚠ Below minimum limit
+            </div>
             {% endif %}
           </td>
+
+          <!-- 📌 STATUS -->
+          <td class="text-center">
+            {% if w.status == 'Pending' %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% elif w.status == 'Approved' %}
+              <span class="badge bg-success">Paid</span>
+            {% elif w.status == 'Rejected' %}
+              <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+          </td>
+
+          <!-- 🗓 DATE -->
+          <td class="text-center">
+            {{ w.created_at.strftime('%d %b %Y') }}
+          </td>
+
+          <!-- 🛠 ADMIN ACTION -->
+          <td>
+            {% if w.status == 'Pending' %}
+
+            <form method="POST"
+                  action="{{ url_for('approve_withdraw', id=w.id) }}">
+
+              <input type="text"
+                     name="payout_ref"
+                     class="form-control form-control-sm mb-1"
+                     placeholder="Payout Ref / UTR"
+                     required>
+
+              <textarea name="admin_note"
+                        class="form-control form-control-sm mb-2"
+                        placeholder="Admin note (optional)"
+                        rows="2"></textarea>
+
+              <button type="submit"
+                      class="btn btn-success btn-sm w-100"
+                      onclick="return confirm('Confirm payout completed?')">
+                ✅ Mark as Paid
+              </button>
+            </form>
+
+            <form method="POST"
+                  action="{{ url_for('reject_withdraw', id=w.id) }}"
+                  class="mt-1">
+              <button type="submit"
+                      class="btn btn-outline-danger btn-sm w-100"
+                      onclick="return confirm('Reject this request?')">
+                ❌ Reject
+              </button>
+            </form>
+
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
   {% else %}
-    <p class="text-muted">No withdrawal requests.</p>
+    <p class="text-muted text-center">
+      No withdrawal requests available.
+    </p>
   {% endif %}
 </div>
+<style>
+  /* ================= WITHDRAWAL BOX ================= */
+.box.full {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+/* ================= HEADINGS ================= */
+.box.full h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.box.full p {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* ================= TABLE ================= */
+.table {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.table thead th {
+  background: linear-gradient(90deg, #0f2a44, #123b63);
+  color: #ffffff;
+  font-size: 14px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+/* ================= BADGES ================= */
+.badge {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 20px;
+}
+
+.badge.bg-warning {
+  background-color: #fbbf24 !important;
+  color: #1f2937;
+}
+
+.badge.bg-success {
+  background-color: #22c55e !important;
+}
+
+.badge.bg-danger {
+  background-color: #ef4444 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #9ca3af !important;
+}
+
+/* ================= AMOUNT ================= */
+.text-success {
+  color: #16a34a !important;
+}
+
+.text-danger {
+  color: #dc2626 !important;
+}
+
+/* ================= ACTION BUTTONS ================= */
+.btn-sm {
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  border: none;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+}
+
+.btn-outline-danger {
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+.btn-outline-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ================= INPUTS ================= */
+.form-control-sm {
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.form-control-sm:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* ================= LIMIT WARNING ================= */
+.small.text-danger {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* ================= EMPTY STATE ================= */
+.text-muted {
+  color: #9ca3af !important;
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+  .table td {
+    font-size: 13px;
+  }
+
+  .btn-sm {
+    font-size: 12px;
+  }
+}
+
+</style>
 {% endif %}
+{% endblock %}
 

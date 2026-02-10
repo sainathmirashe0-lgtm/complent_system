@@ -2,8 +2,145 @@
 {% block content %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+  /* ================= ROOT THEME ================= */
+:root {
+  --primary: #1e3c72;
+  --primary-dark: #16325c;
+  --success: #28a745;
+  --bg: #f4f6fb;
+  --card-bg: #ffffff;
+  --text: #222;
+  --radius: 14px;
+  --shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
 
-<div class="content" style="max-width:500px;margin:40px auto;">
+/* ================= PAGE BACKGROUND ================= */
+body {
+  background: linear-gradient(135deg, #eef2f7, #f9fbff);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ================= CARD BOX ================= */
+.box {
+  background: var(--card-bg);
+  padding: 28px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  animation: slideFade 0.6s ease;
+}
+
+/* ================= HEADING ================= */
+.box h2 {
+  text-align: center;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ================= COMPLAINT INFO ================= */
+.box p {
+  background: #f6f8fc;
+  padding: 12px 15px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ================= FORM LABEL ================= */
+label {
+  font-weight: 600;
+  color: #333;
+}
+
+/* ================= SELECT DROPDOWN ================= */
+select {
+  border-radius: 10px;
+  border: 1px solid #d0d7e2;
+  font-size: 15px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+select:hover {
+  border-color: var(--primary);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30,60,114,0.15);
+}
+
+/* ================= OPTGROUP ================= */
+optgroup {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* ================= BUTTON ================= */
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #34d058);
+  border: none;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button hover lift */
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(40,167,69,0.35);
+}
+
+/* Ripple animation */
+.btn-success::after {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.35) 10%, transparent 60%);
+  transform: scale(0);
+  transition: transform 0.6s ease;
+}
+
+.btn-success:active::after {
+  transform: scale(1);
+}
+
+/* ================= BACK LINK ================= */
+a {
+  color: var(--primary);
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+/* ================= ANIMATIONS ================= */
+@keyframes slideFade {
+  from {
+    opacity: 0;
+    transform: translateY(25px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+</style>
+<div style="max-width:500px;margin:40px auto;">
   <div class="box">
 
     <h2 style="margin-bottom:15px;">👷 Assign Worker</h2>
@@ -37,9 +174,8 @@
 
       <br><br>
 
-      <button type="submit" class="box99 bo" style="width:100%;">
-        ✅ Assign Worker
-      </button>
+      <button type="submit" class="btn btn-success w-100">✅ Assign Worker</button>
+
 
     </form>
 

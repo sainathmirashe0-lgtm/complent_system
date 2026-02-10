@@ -1,29 +1,240 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="box" style="max-width:400px;margin:40px auto;">
+<style>
+/* ================= WITHDRAW PAGE ================= */
+.withdraw-box {
+  max-width: 420px;
+  margin: 50px auto;
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.withdraw-box h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.balance-info {
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.withdraw-box label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+.withdraw-box input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
+
+.withdraw-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.withdraw-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  color: red;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.note {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ================= PAYOUT MODAL ================= */
+.payout-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.payout-modal.active {
+  display: flex;
+}
+
+.payout-box {
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 16px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* Loader */
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #eee;
+  border-top: 4px solid #5f259f;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success Tick */
+.success-check {
+  display: none;
+  font-size: 64px;
+  color: #16a34a;
+  margin-bottom: 15px;
+  animation: pop 0.4s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<!-- ================= WITHDRAW CARD ================= -->
+<div class="withdraw-box">
   <h2>💸 Withdraw Salary</h2>
 
-  <p><b>Available Balance:</b> ₹ {{ balance }}</p>
+  <div class="balance-info">
+    <b>Available Balance:</b> ₹ {{ balance }}
+  </div>
 
-  <form method="POST">
+  <form method="POST"
+        action="{{ url_for('withdraw') }}"
+        onsubmit="handleWithdraw(event)">
+
     <label>Enter Amount</label>
-    <input type="number"
-           name="amount"
-           max="{{ balance }}"
-           required>
+    <input
+      type="number"
+      id="amount"
+      name="amount"
+      min="500"
+      max="100000"
+      data-balance="{{ balance }}"
+      required
+    >
 
-     <button class="box99 bo" style="margin-top:10px;">
-        Request Withdraw
-     </button>
-      <p><b>Total Earned:</b> ₹ {{ data.salary }}</p>
-      <p><b>Withdrawable Balance:</b> ₹ {{ balance }}</p>
+    <div id="errorMsg" class="error-msg"></div>
 
-      <p class="text-muted">
-        Note: Amount will be deducted after admin approval.
-     </p>
-
+    <button type="submit" class="withdraw-btn">
+      💸 Confirm Withdraw
+    </button>
   </form>
+
+  <p class="note">
+    Note: Amount will be deducted immediately and sent to admin for approval.
+  </p>
 </div>
+
+<!-- ================= PAYOUT MODAL ================= -->
+<div id="payoutModal" class="payout-modal">
+  <div class="payout-box">
+    <div class="loader"></div>
+    <div class="success-check">✓</div>
+    <h3 id="payoutText">Processing Payment</h3>
+    <p id="payoutSub">Please wait…</p>
+  </div>
+</div>
+
+<!-- ================= SUCCESS SOUND ================= -->
+<audio id="successSound" preload="auto">
+  <source src="{{ url_for('static', filename='sound/the.mp3') }}" type="audio/mpeg">
+</audio>
+
+<script>
+function handleWithdraw(e) {
+  e.preventDefault();
+
+  const amountInput = document.getElementById("amount");
+  const error = document.getElementById("errorMsg");
+  const amount = parseInt(amountInput.value);
+  const balance = parseInt(amountInput.dataset.balance);
+  const sound = document.getElementById("successSound");
+
+  error.innerText = "";
+
+  if (!amount || amount <= 0) {
+    error.innerText = "Enter a valid amount";
+    return;
+  }
+
+  if (amount > balance) {
+    error.innerText = "Amount exceeds available balance";
+    return;
+  }
+
+  /* 🔓 UNLOCK AUDIO (browser rule fix) */
+  sound.muted = true;
+  sound.play().then(() => {
+    sound.pause();
+    sound.currentTime = 0;
+    sound.muted = false;
+  }).catch(() => {});
+
+  const modal = document.getElementById("payoutModal");
+  const loader = modal.querySelector(".loader");
+  const check = modal.querySelector(".success-check");
+  const text = document.getElementById("payoutText");
+  const sub = document.getElementById("payoutSub");
+
+  /* STEP 1: Loader */
+  modal.classList.add("active");
+  loader.style.display = "block";
+  check.style.display = "none";
+  text.innerText = "Processing Payment";
+  sub.innerText = "Please wait…";
+
+  /* STEP 2: Success + SOUND */
+  setTimeout(() => {
+    loader.style.display = "none";
+    check.style.display = "block";
+    text.innerText = "Payment Sent to Admin";
+    sub.innerText = "Your request is under review";
+
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+  }, 2200);
+
+  /* STEP 3: Submit AFTER sound */
+  setTimeout(() => {
+    e.target.submit();
+  }, 3600);
+}
+</script>
 
 {% endblock %}

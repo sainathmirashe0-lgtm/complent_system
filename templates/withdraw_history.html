@@ -1,41 +1,130 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-4">
-  <h3 class="mb-3">Withdrawal History</h3>
+<style>
+.page-box {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
 
-  {% if withdrawals %}
-  <table class="table table-bordered table-hover">
-    <thead class="table-dark">
-      <tr>
-        <th>#</th>
-        <th>Amount (₹)</th>
-        <th>Status</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for w in withdrawals %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ w.amount }}</td>
-        <td>
-          {% if w.status == "Approved" %}
-            <span class="badge bg-success">Approved</span>
-          {% elif w.status == "Rejected" %}
-            <span class="badge bg-danger">Rejected</span>
-          {% else %}
-            <span class="badge bg-warning text-dark">Pending</span>
-          {% endif %}
-        </td>
-        <td>{{ w.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+.chart-box {
+  height: 300px;
+  margin-bottom: 40px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #1e3c72;
+  color: white;
+  padding: 12px;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+}
+
+.approved { background: green; }
+.pending { background: orange; }
+.rejected { background: red; }
+.paid { background: #28a745; }
+</style>
+
+<div class="page-box">
+
+  <h2>📊 Monthly Withdraw Chart</h2>
+  <div class="chart-box">
+    <canvas id="withdrawChart"></canvas>
+  </div>
+
+  <h2>📜 Withdrawal History</h2>
+
+  {% if data %}
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Details</th>
+    </tr>
+
+    {% for w in data %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>₹ {{ w.amount }}</td>
+      <td>
+        <span class="badge {{ w.status|lower }}">
+          {{ w.status }}
+        </span>
+      </td>
+      <td>{{ w.created_at.strftime("%d %b %Y %I:%M %p") }}</td>
+      <td>
+        {% if w.status == "Paid" %}
+          <span class="badge paid">✅ Paid</span><br>
+          <small>Ref: {{ w.payout_ref }} ({{ w.payout_method }})</small>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
   </table>
   {% else %}
-    <div class="alert alert-info">No withdrawal history found.</div>
+    <p style="text-align:center;">No withdrawal history</p>
   {% endif %}
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+fetch("/api/withdraw/monthly")
+  .then(res => res.json())
+  .then(values => {
+
+    new Chart(document.getElementById("withdrawChart"), {
+      type: "bar",
+      data: {
+        labels: ["Jan","Feb","Mar","Apr","May","Jun"],
+        datasets: [{
+          label: "Withdraw Amount (₹)",
+          data: values,
+          backgroundColor: "#1e3c72"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+  })
+  .catch(err => console.error("Chart error:", err));
+</script>
 
 {% endblock %}

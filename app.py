@@ -3,7 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import func
-import random
+from flask import send_file
+from datetime import date
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from datetime import datetime, timedelta
+from functools import wraps
+import random,string
+import re
 import os
 import base64
 import smtplib
@@ -14,7 +21,7 @@ from werkzeug.utils import secure_filename
 # ================= EMAIL CONFIG =================
 
 EMAIL_ADDRESS = "sainathmirashe0@gmail.com"
-EMAIL_PASSWORD = "YOUR_GMAIL_APP_PASSWORD"  # ⚠️ Use ENV in production
+EMAIL_PASSWORD = "tdzafuxsfkefrmlj"  # ⚠️ Use ENV in production
 
 def send_email(to, subject, body):
     try:
@@ -37,6 +44,14 @@ def send_email(to, subject, body):
 
 app = Flask(__name__)
 app.secret_key = "secret123"
+DISCOUNT_SLABS = [
+    {"points": 100, "discount": 5},
+    {"points": 200, "discount": 10},
+    {"points": 300, "discount": 15},
+    {"points": 400, "discount": 20},
+    {"points": 500, "discount": 25},
+    {"points": 1000, "discount": 50},
+]
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:@127.0.0.1:3306/complaint_system"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -59,11 +74,32 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="user")
+
+    # ✅ WORKER PRESENCE
+    is_online = db.Column(db.Boolean, default=False)
+    last_seen = db.Column(db.DateTime)
+
+    # ✅ WORKER AVAILABILITY
+    status = db.Column(
+        db.String(30),
+        default="available"   # available | busy | emergency_leave | offline
+    )
+    leave_from = db.Column(db.Date)
+    leave_to = db.Column(db.Date)
+    leave_reason = db.Column(db.Text)
+
     department = db.Column(db.String(50))
     profile_photo = db.Column(db.String(255))
+
     otp = db.Column(db.String(6))
     otp_expiry = db.Column(db.DateTime)
+
     balance = db.Column(db.Integer, default=0)
+    fake_complaints = db.Column(db.Integer, default=0)
+    is_blocked = db.Column(db.Boolean, default=False)
+    reward_points = db.Column(db.Integer, default=0)
+
+    
 class Withdrawal(db.Model):
     __tablename__ = "withdrawals"
 
@@ -80,14 +116,23 @@ class Complaint(db.Model):
     category = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     image = db.Column(db.String(255))
+
     status = db.Column(db.String(50), default="Pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     assigned_to = db.Column(db.Integer, db.ForeignKey("users.id"))
+
     work_image = db.Column(db.String(255))
     rating = db.Column(db.Integer)
+    rated = db.Column(db.Boolean, default=False)
     feedback = db.Column(db.Text)
+
+    amount = db.Column(db.Integer, default=0)
+    salary_paid = db.Column(db.Boolean, default=False)
+    approved_at = db.Column(db.DateTime)
+    deadline = db.Column(db.DateTime)
+    reject_reason = db.Column(db.Text)
 
 class Solution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -103,8 +148,37 @@ class SolutionReaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     solution_id = db.Column(db.Integer, db.ForeignKey("solution.id"), nullable=False)
-    reaction = db.Column(db.String(10), nullable=False)  # like / dislike
+    reaction = db.Column(db.String(10), nullable=False)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class BankDetail(db.Model):
+    __tablename__ = "bank_details"
+
+    id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True)
+    bank_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(30))
+    ifsc_code = db.Column(db.String(20))
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)   # user or worker id
+    title = db.Column(db.String(200))
+    message = db.Column(db.Text)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Coupon(db.Model):
+    __tablename__ = "coupons"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    code = db.Column(db.String(20), unique=True, nullable=False)
+    discount_percent = db.Column(db.Integer, nullable=False)
+    is_used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 
 
 # ================= HELPERS =================
@@ -119,8 +193,194 @@ def is_logged_in():
 
 def generate_otp():
     return str(random.randint(100000, 999999))
+def block_guard():
+    if "user_id" in session:
+        user = User.query.get(session["user_id"])
+        if user and user.is_blocked:
+            flash("🚫 Your account is blocked. You cannot perform this action.", "danger")
+            return True
+    return False
+
+def login_and_block_guard():
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not is_logged_in():
+                return redirect(url_for("login"))
+
+            user = User.query.get(session["user_id"])
+            if user and user.is_blocked:
+                flash("🚫 Your account is blocked.", "danger")
+                return redirect(url_for("notifications"))
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+def auto_reset_leave():
+    db.session.execute(
+        db.text("""
+            UPDATE users
+            SET status='available',
+                leave_from=NULL,
+                leave_to=NULL,
+                leave_reason=NULL
+            WHERE role='worker'
+              AND status='emergency_leave'
+              AND leave_to < :today
+        """),
+        {"today": date.today()}
+    )
+    db.session.commit()
+
+def create_notification(user_id, title, message, email=None):
+    n = Notification(
+        user_id=user_id,
+        title=title,
+        message=message
+    )
+    db.session.add(n)
+    db.session.commit()
+
+    # 📧 Email (optional but recommended)
+    if email:
+        send_email(
+            to=email,
+            subject=title,
+            body=message
+        )
+def generate_coupon_code():
+    return "OM-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+@app.route("/coupon", methods=["GET", "POST"])
+@login_and_block_guard()
+def coupon():
+    user = User.query.get_or_404(session["user_id"])
+
+    # 🔥 Fetch ONLY valid coupons (not used + not expired)
+    coupons = Coupon.query.filter(
+        Coupon.user_id == user.id,
+        Coupon.is_used == False,
+        Coupon.expires_at > datetime.utcnow()
+    ).order_by(Coupon.created_at.desc()).all()
+
+    # 🔁 Redeem points → create coupon
+    if request.method == "POST":
+        try:
+            points = int(request.form["points"])
+        except (ValueError, TypeError):
+            flash("Invalid points value", "danger")
+            return redirect(url_for("coupon"))
+
+        if points <= 0:
+            flash("Points must be greater than zero", "danger")
+            return redirect(url_for("coupon"))
+
+        if user.reward_points < points:
+            flash("Not enough reward points", "danger")
+            return redirect(url_for("coupon"))
+
+        # 🎯 Dynamic discount logic (cap at 50%)
+        discount = min(50, points // 20)   # 1000 → 50%
+
+        if discount <= 0:
+            flash("Points too low to generate a coupon", "warning")
+            return redirect(url_for("coupon"))
+
+        # 🎟 Generate coupon
+        code = generate_coupon_code()
+        expires_at = datetime.utcnow() + timedelta(days=15)
+
+        new_coupon = Coupon(
+            user_id=user.id,
+            code=code,
+            discount_percent=discount,
+            is_used=False,
+            expires_at=expires_at
+        )
+
+        # 💰 Deduct points
+        user.reward_points -= points
+
+        db.session.add(new_coupon)
+        db.session.commit()
+
+        flash(
+            f"🎉 Coupon created! {discount}% OFF • Valid for 15 days • One-time use",
+            "success"
+        )
+        return redirect(url_for("coupon"))
+
+    return render_template(
+        "coupon.html",
+        user=user,
+        coupons=coupons
+    )
+
+@app.route("/cleanup-expired-coupons")
+def cleanup_expired_coupons():
+    Coupon.query.filter(
+        Coupon.expires_at < datetime.utcnow()
+    ).update({"is_used": True})
+    db.session.commit()
+    return "Expired coupons cleaned"
 
 # ================= TEST EMAIL =================
+@app.route("/worker/apply-leave", methods=["POST"])
+def apply_emergency_leave():
+    if "user_id" not in session or session.get("user_role") != "worker":
+        return redirect(url_for("login"))
+
+    worker = User.query.get_or_404(session["user_id"])
+
+    from_date = request.form["from_date"]
+    to_date = request.form["to_date"]
+    reason = request.form["reason"]
+
+    # ❌ DATE VALIDATION
+    if to_date < from_date:
+        flash("Invalid leave date range", "danger")
+        return redirect(url_for("worker_dashboard"))
+
+    worker.status = "emergency_leave"
+    worker.leave_from = from_date
+    worker.leave_to = to_date
+    worker.leave_reason = reason
+
+    db.session.commit()
+
+    flash("🚨 Emergency leave applied successfully", "success")
+    return redirect(url_for("worker_dashboard"))
+
+
+@app.route("/worker/toggle-status", methods=["POST"])
+def toggle_worker_status():
+    if "user_id" not in session or session.get("user_role") != "worker":
+        return jsonify({"error": "Unauthorized"}), 401
+
+    worker = User.query.get(session["user_id"])
+
+    # 🚫 Cannot toggle during emergency leave
+    if worker.status == "emergency_leave":
+        return jsonify({"error": "On emergency leave"}), 403
+
+    if worker.is_online:
+        # GO OFFLINE
+        worker.is_online = False
+        worker.status = "offline"
+    else:
+        # GO ONLINE
+        worker.is_online = True
+        worker.status = "available"
+
+    worker.last_seen = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        "status": worker.status,
+        "is_online": worker.is_online
+    })
+
 
 @app.route("/test-email")
 def test_email():
@@ -238,54 +498,53 @@ def login():
     if request.method == "POST":
         user = User.query.filter_by(email=request.form["email"]).first()
 
-        if user and check_password_hash(user.password, request.form["password"]):
-            session.clear()
-            session["user_id"] = user.id
-            session["user_role"] = user.role
+        if not user or not check_password_hash(user.password, request.form["password"]):
+            flash("Invalid credentials", "danger")
+            return redirect(url_for("login"))
 
-            if user.role == "worker":
-                return redirect(url_for("worker_dashboard"))
-            return redirect(url_for("dashboard"))
+        if user.is_blocked:
+            flash("🚫 Your account is blocked. Contact admin.", "danger")
+            return redirect(url_for("login"))
+        
+        if user.role == "worker":
+           user.is_online = 1
+           user.last_seen = datetime.utcnow()
+           db.session.commit()
 
-        flash("Invalid credentials", "danger")
+        session.clear()
+        session["user_id"] = user.id
+        session["user_role"] = user.role
+
+        if user.role == "worker":
+            return redirect(url_for("worker_dashboard"))
+        return redirect(url_for("dashboard"))
 
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
+    uid = session.get("user_id")
+    if uid:
+        user = User.query.get(uid)
+        if user and user.role == "worker":
+            user.is_online = 0
+            db.session.commit()
+
     session.clear()
     return redirect(url_for("login"))
 
-# ================= COMPLAINT =================
-@app.route("/complaint", methods=["GET", "POST"])
-def complaint():
-    if request.method == "POST":
-        category = request.form["category"]
-        description = request.form["description"]
-        latitude = request.form["latitude"]
-        longitude = request.form["longitude"]
-        photo_data = request.form["photoData"]
 
-        # Decode image
-        if photo_data:
-            header, encoded = photo_data.split(",", 1)
-            image_data = base64.b64decode(encoded)
-            with open("static/uploads/complaint.png", "wb") as f:
-                f.write(image_data)
-
-        # Save to DB here
-        return "Complaint submitted successfully"
-
-    return render_template("complaint.html")
+# ================= COMPLAINT ================
 @app.route("/index", methods=["GET", "POST"])
+@login_and_block_guard()
 def index():
-    if not is_logged_in():
-        return redirect(url_for("login"))
+    user = User.query.get_or_404(session["user_id"])  # ✅ logged-in user
 
     if request.method == "POST":
         image_path = None
         photo_data = request.form.get("photoData")
 
+        # ================= IMAGE CAPTURE =================
         if photo_data:
             _, encoded = photo_data.split(",", 1)
             img = base64.b64decode(encoded)
@@ -294,20 +553,60 @@ def index():
                 f.write(img)
             image_path = f"uploads/{name}"
 
+        # ================= BASE PRICE =================
+        BASE_PRICE = 500
+        discount = 0
+
+        # ================= POINTS DISCOUNT =================
+        use_points = request.form.get("use_points")
+        if use_points == "yes" and user.reward_points >= 10:
+            discount += 50
+            user.reward_points -= 10
+
+        # ================= COUPON DISCOUNT =================
+        coupon_code = request.form.get("coupon_code", "").strip()
+
+        if coupon_code:
+            coupon = Coupon.query.filter_by(
+                user_id=user.id,
+                code=coupon_code,
+                is_used=False
+            ).filter(
+                Coupon.expires_at > datetime.utcnow()
+            ).first()
+
+            if coupon:
+                discount += int(BASE_PRICE * (coupon.discount_percent / 100))
+                coupon.is_used = True   # ✅ ONE-TIME USE
+            else:
+                flash("❌ Invalid, expired, or already used coupon", "danger")
+
+        # ================= FINAL AMOUNT =================
+        final_amount = max(0, BASE_PRICE - discount)
+
+        # ================= SAVE COMPLAINT =================
         complaint = Complaint(
             category=request.form["category"],
             description=request.form["description"],
             image=image_path,
-            user_id=session["user_id"]
+            user_id=user.id,
+            amount=final_amount
         )
 
         db.session.add(complaint)
         db.session.commit()
 
-        flash("Complaint submitted", "success")
+        flash(
+            f"✅ Complaint submitted successfully. Amount charged: ₹{final_amount}",
+            "success"
+        )
         return redirect(url_for("dashboard"))
 
-    return render_template("index.html")
+    # ================= GET REQUEST =================
+    return render_template("index.html", user=user)
+
+
+
 
 # ================= DASHBOARD =================
 
@@ -315,83 +614,63 @@ def index():
 def home():
     return render_template("navbar.html")
 
-@app.route("/dashboard")
-def dashboard():
-    if not is_logged_in():
-        return redirect(url_for("login"))
-
-    user = db.session.get(User, session["user_id"])
-
-    complaints = Complaint.query.all() if is_admin() else Complaint.query.filter_by(user_id=user.id).all()
-    withdrawals = Withdrawal.query.filter_by(status="Pending").all() if is_admin() else []
-
-    return render_template(
-        "dashboard.html",
-        complaints=complaints,
-        is_admin=is_admin(),
-        user=user,
-        withdrawals=withdrawals
-    )
-@app.route("/assign-worker/<int:id>", methods=["GET","POST"])
-def assign_worker(id):
-    complaint = Complaint.query.get(id)
-    workers = User.query.filter_by(role="worker").all()
-
-    workers_by_dept = {}
-    for w in workers:
-        workers_by_dept.setdefault(w.department or "Other", []).append(w)
-
-    if request.method == "POST":
-        worker_id = int(request.form["worker_id"])
-        complaint.assigned_to = worker_id
-        complaint.status = "In Progress"
-        db.session.commit()
-
-        worker = User.query.get(worker_id)
-        send_email(worker.email, "New Work Assigned",
-                   f"Complaint {complaint.id} assigned to you")
-
-        return redirect(url_for("dashboard"))
-
-    return render_template("assign_worker.html",
-                           complaint=complaint,
-                           workers_by_dept=workers_by_dept)
-
-# ================= WORKER =================
 @app.route("/worker/dashboard")
 def worker_dashboard():
-    worker_id = session.get("user_id")
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    auto_reset_leave()  # ✅ IMPORTANT
+
+    worker = User.query.get_or_404(session["user_id"])
+
+    notifications = Notification.query.filter_by(
+        user_id=worker.id
+    ).order_by(Notification.created_at.desc()).all()
+
+    unread_count = Notification.query.filter_by(
+        user_id=worker.id,
+        is_read=False
+    ).count()
+
+    if worker.is_blocked:
+        return render_template(
+            "worker_dashboard.html",
+            worker=worker,
+            complaints=[],
+            balance=worker.balance,
+            completed_jobs=0,
+            avg_rating=0,
+            notifications=notifications,
+            unread_count=unread_count,
+            blocked=True
+        )
 
     complaints = Complaint.query.filter_by(
-        assigned_to=worker_id
+        assigned_to=worker.id
     ).all()
+
+    completed_jobs = Complaint.query.filter_by(
+        assigned_to=worker.id,
+        status="Approved"
+    ).count()
+
+    avg_rating = db.session.query(func.avg(Complaint.rating)) \
+        .filter(
+            Complaint.assigned_to == worker.id,
+            Complaint.rating != None
+        ).scalar()
 
     return render_template(
         "worker_dashboard.html",
-        complaints=complaints
+        worker=worker,
+        complaints=complaints,
+        balance=worker.balance,
+        completed_jobs=completed_jobs,
+        avg_rating=round(avg_rating or 0, 1),
+        notifications=notifications,
+        unread_count=unread_count,
+        blocked=False
     )
-
-@app.route("/worker-complete/<int:id>", methods=["POST"])
-def worker_complete(id):
-    c = Complaint.query.get(id)
-    file = request.files["work_image"]
-    filename = f"work_{id}.png"
-    file.save(os.path.join(UPLOAD_FOLDER, filename))
-    c.work_image = f"uploads/{filename}"
-    c.status = "Completed"
-    db.session.commit()
-    return redirect(url_for("worker_dashboard"))
-
-
-# ================= FEEDBACK =================
-@app.route("/feedback/<int:id>", methods=["POST"])
-def submit_feedback(id):
-    c = Complaint.query.get(id)
-    c.rating = int(request.form["rating"])
-    c.feedback = request.form["feedback"]
-    db.session.commit()
-    return redirect(url_for("dashboard"))
-
 
 @app.route("/withdraw-history")
 def withdraw_history():
@@ -399,44 +678,6 @@ def withdraw_history():
     return render_template("withdraw_history.html", data=data)
 
 
-@app.route("/admin/approve/<int:id>", methods=["POST"])
-def admin_approve(id):
-    if not is_admin():
-        return {"message": "Unauthorized"}, 403
-
-    complaint = Complaint.query.get_or_404(id)
-
-    if complaint.status == "Approved":
-        return {"message": "Already approved"}, 200
-
-    if complaint.status not in ["Resolved", "Completed"]:
-        return {"message": "Complaint not completed yet"}, 400
-
-    if not complaint.assigned_to:
-        return {"message": "No worker assigned"}, 400
-
-    worker = User.query.get_or_404(complaint.assigned_to)
-
-    rating = complaint.rating or 0
-
-    if rating >= 4.5:
-        pay = 500
-    elif rating >= 3.5:
-        pay = 400
-    elif rating >= 2.5:
-        pay = 300
-    else:
-        pay = 100
-
-    worker.balance += pay
-    complaint.status = "Approved"
-
-    db.session.commit()
-
-    return {
-        "message": "Complaint approved successfully",
-        "paid": pay
-    }, 200
 
 # ================= CHART API =================
 @app.route("/api/dashboard-data")
@@ -462,6 +703,7 @@ def admin_solutions():
     return render_template("admin_solutions.html", solutions=solutions)
 
 @app.route("/solution", methods=["GET", "POST"])
+@login_and_block_guard()
 def solution():
     if request.method == "POST":
         name = request.form.get("name")
@@ -484,12 +726,15 @@ def solution():
 
     return render_template("solution.html")
 
+
+
 @app.route("/all-solutions")
 def all_solutions():
- solutions = Solution.query \
+    solutions = Solution.query \
         .order_by(Solution.likes.desc(), Solution.created_at.desc()) \
         .all()
- return render_template("all_solutions.html", solutions=solutions)
+    return render_template("all_solutions.html", solutions=solutions)
+
 
 @app.route("/solution/<int:id>/like", methods=["POST"])
 def like_solution(id):
@@ -553,7 +798,6 @@ def dislike_solution(id):
 
     return redirect(url_for("all_solutions"))
 
-
 @app.route("/worker/salary")
 def worker_salary():
 
@@ -582,38 +826,315 @@ def worker_salary():
         "salary": worker.balance   # 🔥 ONLY THIS
     }
 
-    return render_template("worker_salary.html", data=data)
+    return render_template("worker_salary.html", data=data )
 
 
 @app.route("/worker/upload/<int:id>", methods=["POST"])
+@login_and_block_guard()
 def worker_upload(id):
-
     complaint = Complaint.query.get_or_404(id)
+    if complaint.status in ["Completed", "Approved"]:
+        flash("This task is locked.", "danger")
+        return redirect(url_for("worker_dashboard"))
 
     file = request.files.get("work_image")
     if not file:
-        flash("No file selected", "danger")
+        flash("No file selected.", "warning")
         return redirect(url_for("worker_dashboard"))
 
     filename = secure_filename(file.filename)
+    file.save(os.path.join("static/work", filename))
 
-    upload_folder = os.path.join("static", "work_images")
-
-    # ✅ create folder if it doesn't exist
-    os.makedirs(upload_folder, exist_ok=True)
-
-    file_path = os.path.join(upload_folder, filename)
-
-    file.save(file_path)
-
-    # save relative path in DB
-    complaint.work_image = f"work_images/{filename}"
+    complaint.work_image = f"work/{filename}"
     complaint.status = "Completed"
 
     db.session.commit()
+    admin = User.query.filter_by(role="admin").first()
 
-    flash("Work uploaded successfully!", "success")
+    create_notification(
+    user_id=admin.id,
+    title="✅ Work Completed",
+    message=f"Complaint #{complaint.id} work completed. Review required."
+)
+
+    flash("Work submitted successfully.", "success")
     return redirect(url_for("worker_dashboard"))
+
+@app.route("/admin/approve/<int:complaint_id>", methods=["POST"])
+def admin_approve(complaint_id):
+    if session.get("user_role") != "admin":
+        return redirect(url_for("login"))
+
+    complaint = Complaint.query.get_or_404(complaint_id)
+
+    if complaint.status != "Completed":
+        flash("Invalid approval request", "danger")
+        return redirect(url_for("dashboard"))
+
+    complaint.status = "Approved"
+    complaint.approved_at = datetime.utcnow()
+
+    user = User.query.get(complaint.user_id)
+    if user:
+        user.reward_points += 10
+
+    worker = User.query.get(complaint.assigned_to)
+    if worker:
+        worker.status = "available"   # 🔓 FREE WORKER
+
+        create_notification(
+            user_id=worker.id,
+            title="✅ Work Approved",
+            message=f"Your work for Complaint #{complaint.id} has been approved.",
+            email=worker.email
+        )
+
+    db.session.commit()
+    flash("Complaint approved successfully", "success")
+    return redirect(url_for("dashboard"))
+
+@app.route("/api/workers/live-status")
+def live_worker_status():
+
+    # Only admin can see
+    if session.get("user_role") != "admin":
+        return jsonify([])
+
+    workers = User.query.filter(
+        User.role == "worker",
+        User.is_online == True
+    ).all()
+
+    data = []
+    for w in workers:
+        data.append({
+            "name": w.email,
+            "status": w.status   # available / offline / busy
+        })
+
+    return jsonify(data)
+
+@app.route("/admin/assign-worker/<int:id>", methods=["GET", "POST"])
+def assign_worker(id):
+    if session.get("user_role") != "admin":
+        return redirect(url_for("login"))
+
+    auto_reset_leave()
+
+    complaint = Complaint.query.get_or_404(id)
+
+    if request.method == "POST":
+        worker_id = request.form.get("worker_id")
+
+        worker = User.query.filter_by(
+            id=worker_id,
+            role="worker",
+            status="available"
+        ).first()
+
+        if not worker:
+            flash("Invalid or unavailable worker", "danger")
+            return redirect(url_for("dashboard"))
+
+        complaint.assigned_to = worker.id
+        complaint.status = "In Progress"
+
+        # 🔒 LOCK WORKER
+        worker.status = "busy"
+
+        db.session.commit()
+        flash("Worker assigned successfully", "success")
+        return redirect(url_for("dashboard"))
+
+    # ✅ ONLY AVAILABLE WORKERS
+    workers = User.query.filter_by(
+        role="worker",
+        status="available"
+    ).all()
+
+    workers_by_dept = {}
+    for w in workers:
+        dept = w.department or "General"
+        workers_by_dept.setdefault(dept, []).append(w)
+
+    return render_template(
+        "assign_worker.html",
+        complaint=complaint,
+        workers_by_dept=workers_by_dept
+    )
+
+
+
+@app.route("/admin/withdraw/reject/<int:id>", methods=["POST"])
+def reject_withdraw(id):
+    w = Withdrawal.query.get_or_404(id)
+
+    if w.status != "Pending":
+        flash("Already processed", "warning")
+        return redirect(url_for("dashboard"))
+
+    worker = User.query.get(w.worker_id)
+    worker.balance += w.amount   # ✅ REFUND
+
+    w.status = "Rejected"
+    db.session.commit()
+
+    flash("Withdraw rejected & refunded", "warning")
+    return redirect(url_for("dashboard"))
+
+
+
+
+@app.route("/admin/withdraw/pay/<int:id>", methods=["POST"])
+def pay_withdraw(id):
+    if not is_admin():
+        return redirect(url_for("login"))
+
+    w = Withdrawal.query.get_or_404(id)
+
+    if w.status != "Approved":
+        flash("Withdraw not approved yet", "warning")
+        return redirect(url_for("dashboard"))
+
+    w.status = "Paid"
+    w.payout_ref = request.form["payout_ref"]
+    w.payout_method = request.form["payout_method"]
+    w.paid_at = datetime.utcnow()
+
+    db.session.commit()
+
+    flash("Payment marked as PAID", "success")
+    return redirect(url_for("dashboard"))
+
+
+@app.route('/withdraw', methods=['GET', 'POST'])
+def withdraw():
+    # 🔐 Worker login check
+    if "user_id" not in session or session.get("user_role") != "worker":
+        return redirect(url_for("login"))
+
+    worker = User.query.get_or_404(session["user_id"])
+
+    # 🚫 BANK DETAILS REQUIRED BEFORE WITHDRAW
+    bank = BankDetail.query.filter_by(worker_id=worker.id).first()
+    if not bank:
+        flash("⚠️ Please add your bank details before requesting withdrawal.", "danger")
+        return redirect(url_for("worker_bank_details"))
+
+    if request.method == 'POST':
+        try:
+            amount = int(request.form['amount'])
+        except (ValueError, TypeError):
+            flash("Invalid amount entered", "danger")
+            return redirect(url_for('withdraw'))
+
+        MIN_WITHDRAW = 500
+        MAX_WITHDRAW = 100000
+
+        # ❌ Minimum limit
+        if amount < MIN_WITHDRAW:
+            flash(f"Minimum withdraw amount is ₹{MIN_WITHDRAW}", "danger")
+            return redirect(url_for('withdraw'))
+
+        # ❌ Maximum limit
+        if amount > MAX_WITHDRAW:
+            flash(f"Maximum withdraw allowed is ₹{MAX_WITHDRAW}", "danger")
+            return redirect(url_for('withdraw'))
+
+        # ❌ Balance check
+        if amount > worker.balance:
+            flash("Insufficient balance", "danger")
+            return redirect(url_for('withdraw'))
+
+        # ✅ Create withdraw request
+        withdrawal = Withdrawal(
+            worker_id=worker.id,
+            amount=amount,
+            status='Pending'
+        )
+
+        # 🔒 Hold balance until admin decision
+        worker.balance -= amount
+
+        db.session.add(withdrawal)
+        db.session.commit()
+
+        # 🔔 NOTIFY ADMIN (BEST PRACTICE)
+        admin = User.query.filter_by(role="admin").first()
+        if admin:
+            create_notification(
+                user_id=admin.id,
+                title="💰 New Withdraw Request",
+                message=f"Worker ID {worker.id} requested ₹{amount} withdrawal."
+            )
+
+        flash("Withdraw request submitted for admin approval", "success")
+        return redirect(url_for('withdraw'))
+
+    return render_template('withdraw.html', balance=worker.balance)
+
+
+
+
+@app.route('/submit_rating/<int:complaint_id>', methods=['POST'])
+def submit_rating(complaint_id):
+    complaint = Complaint.query.get_or_404(complaint_id)
+
+    if complaint.rating is not None:
+        flash("Feedback already submitted.", "warning")
+        return redirect(url_for("dashboard"))
+  
+
+    rating = int(request.form["rating"])
+    feedback = request.form["feedback"]
+
+    amount_map = {5: 500, 4: 400, 3: 300, 2: 200, 1: 50}
+    amount = amount_map.get(rating, 0)
+
+    worker = User.query.filter_by(
+        id=complaint.assigned_to,
+        role="worker"
+    ).first()
+
+    if not worker:
+        flash("Worker not found.", "danger")
+        return redirect(url_for("dashboard"))
+
+    complaint.rating = rating
+    complaint.feedback = feedback
+    complaint.amount = amount
+
+    # ✅ ADD SALARY ONLY IF ADMIN APPROVED & NOT PAID
+    if complaint.status == "Approved" and not complaint.salary_paid:
+        worker.balance += amount
+        complaint.salary_paid = True
+
+    db.session.commit()
+
+    flash(f"₹{amount} added to worker balance", "success")
+    return redirect(url_for("dashboard"))
+
+@app.route('/admin/withdrawals')
+def admin_withdrawals():
+    if not is_admin():
+        return redirect(url_for('login'))
+
+    withdrawals = db.session.query(
+        Withdrawal, User, BankDetail
+    ).join(
+        User, Withdrawal.worker_id == User.id
+    ).join(
+        BankDetail, User.id == BankDetail.worker_id
+    ).order_by(
+        Withdrawal.created_at.desc()
+    ).all()
+
+    return render_template(
+        'admin_withdrawals.html',
+        withdrawals=withdrawals,
+        is_admin=True
+    )
+
 
 @app.route("/admin/withdraw/approve/<int:id>", methods=["POST"])
 def approve_withdraw(id):
@@ -621,70 +1142,270 @@ def approve_withdraw(id):
         return redirect(url_for("login"))
 
     w = Withdrawal.query.get_or_404(id)
-    worker = User.query.get(w.worker_id)
 
-    if w.status == "Pending" and w.amount <= worker.balance:
-        worker.balance -= w.amount
-        w.status = "Approved"
-        db.session.commit()
-        flash("Withdraw approved & balance deducted", "success")
+    if w.status != "Pending":
+        flash("Already processed", "warning")
+        return redirect(url_for("dashboard"))
 
-    return redirect(url_for("dashboard"))
-
-
-@app.route("/admin/withdraw/reject/<int:id>", methods=["POST"])
-def reject_withdraw(id):
-    if not is_admin():
-        return redirect(url_for("login"))
-
-    w = Withdrawal.query.get_or_404(id)
-    w.status = "Rejected"
+    w.status = "Approved"
     db.session.commit()
 
-    flash("Withdraw request rejected", "warning")
+    flash("Withdraw approved", "success")
     return redirect(url_for("dashboard"))
 
-@app.route("/withdraw", methods=["GET", "POST"])
-def withdraw():
+@app.route("/api/withdraw/monthly")
+def withdraw_monthly():
+    if "user_id" not in session:
+        return jsonify([0]*12)
 
+    worker_id = session["user_id"]
+
+    result = db.session.query(
+        func.month(Withdrawal.created_at),
+        func.coalesce(func.sum(Withdrawal.amount), 0)
+    ).filter(
+        Withdrawal.worker_id == worker_id,
+        Withdrawal.status == "Approved"
+    ).group_by(func.month(Withdrawal.created_at)).all()
+
+    data = [0]*12
+    for month, total in result:
+        data[month-1] = int(total)
+
+    return jsonify(data)
+# ================= WORKER =================
+
+@app.route("/worker/bank-details", methods=["GET", "POST"])
+def worker_bank_details():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    worker = User.query.get_or_404(session["user_id"])
+    worker_id = session["user_id"]
 
     if request.method == "POST":
-        amount = int(request.form["amount"])
+        bank_name = request.form["bank_name"]
+        account_number = request.form["account_number"]
+        ifsc_code = request.form["ifsc_code"].upper()
 
-        if amount <= 0:
-            flash("Invalid amount", "danger")
-            return redirect(url_for("withdraw"))
+        # ✅ IFSC VALIDATION (SERVER)
+        if not re.match(r"^[A-Z]{4}0[A-Z0-9]{6}$", ifsc_code):
+            flash("Invalid IFSC Code", "danger")
+            return redirect(url_for("worker_bank_details"))
 
-        if amount > worker.balance:
-            flash("Insufficient balance", "danger")
-            return redirect(url_for("withdraw"))
-
-        req = Withdrawal(
-            worker_id=worker.id,
-            amount=amount,
-            status="Pending"
+        db.session.execute(
+            db.text("""
+                INSERT INTO bank_details (worker_id, bank_name, account_number, ifsc_code)
+                VALUES (:wid, :bank, :acc, :ifsc)
+                ON DUPLICATE KEY UPDATE
+                  bank_name=:bank,
+                  account_number=:acc,
+                  ifsc_code=:ifsc
+            """),
+            {
+                "wid": worker_id,
+                "bank": bank_name,
+                "acc": account_number,
+                "ifsc": ifsc_code
+            }
         )
-
-        db.session.add(req)
         db.session.commit()
 
-        flash("Withdraw request sent for admin approval", "success")
-        return redirect(url_for("withdraw"))
+        flash("Bank details saved successfully", "success")
+        return redirect(url_for("worker_dashboard"))
+
+    return render_template("worker_bank_details.html")
+
+@app.route("/fix-balance-once")
+def fix_balance_once():
+    complaints = Complaint.query.filter_by(
+        status="Approved",
+        salary_paid=False
+    ).all()
+
+    count = 0
+    for c in complaints:
+        worker = User.query.get(c.assigned_to)
+        if worker and c.amount > 0:
+            worker.balance += c.amount
+            c.salary_paid = True
+            count += 1
+
+    db.session.commit()
+    return f"Fixed {count} complaints"
+
+@app.route("/worker/salary-pdf")
+def salary_pdf():
+    worker = User.query.get_or_404(session["user_id"])
+
+    earned = worker.balance
+    completed = Complaint.query.filter_by(
+        assigned_to=worker.id,
+        status="Approved"
+    ).count()
+
+    file_path = f"salary_{worker.id}.pdf"
+    c = canvas.Canvas(file_path, pagesize=A4)
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(200, 800, "Salary Slip")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 760, f"Worker Email: {worker.email}")
+    c.drawString(50, 730, f"Completed Jobs: {completed}")
+    c.drawString(50, 700, f"Total Salary: ₹ {earned}")
+    c.drawString(50, 670, f"Date: {datetime.now().strftime('%d %b %Y')}")
+
+    c.save()
+
+    return send_file(file_path, as_attachment=True)
+
+@app.route("/admin/reject/<int:complaint_id>", methods=["POST"])
+def admin_reject(complaint_id):
+    if not is_admin():
+        return redirect(url_for("login"))
+
+    complaint = Complaint.query.get_or_404(complaint_id)
+
+    # ❌ Already processed
+    if complaint.status in ["Rejected", "Approved"]:
+        flash("Complaint already processed", "warning")
+        return redirect(url_for("dashboard"))
+
+    reason = request.form.get("reason")
+
+    # ✅ Reject complaint
+    complaint.status = "Rejected"
+    complaint.reject_reason = reason
+
+    # 👤 Complaint owner
+    user = User.query.get(complaint.user_id)
+
+    # ⚠️ Increase fake count
+    user.fake_complaints += 1
+
+    # 🔔 Notify rejection
+    create_notification(
+        user_id=user.id,
+        title="❌ Complaint Rejected",
+        message=f"""
+Your complaint #{complaint.id} was rejected as FAKE.
+
+Reason:
+{reason}
+
+Warning:
+You have {3 - user.fake_complaints} chance(s) left.
+""",
+        email=user.email
+    )
+
+    # 🚫 Block user if fake count >= 3
+    if user.fake_complaints >= 3:
+        user.is_blocked = True
+
+        create_notification(
+            user_id=user.id,
+            title="🚫 Account Blocked",
+            message="Your account has been BLOCKED due to repeated fake complaints.",
+            email=user.email
+        )
+
+    db.session.commit()
+
+    flash("Complaint rejected and user notified", "danger")
+    return redirect(url_for("dashboard"))
+
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    auto_reset_leave()  # ✅ IMPORTANT
+
+    user = User.query.get_or_404(session["user_id"])
+    role = session.get("user_role")
+
+    if role == "admin":
+        complaints = Complaint.query.order_by(
+            Complaint.created_at.desc()
+        ).all()
+
+        withdrawals = Withdrawal.query.order_by(
+            Withdrawal.created_at.desc()
+        ).all()
+
+        return render_template(
+            "dashboard.html",
+            user=user,
+            complaints=complaints,
+            withdrawals=withdrawals,
+            is_admin=True,
+            is_user=False,
+            blocked=False
+        )
+
+    if user.is_blocked:
+        complaints = Complaint.query.filter(
+            Complaint.user_id == user.id,
+            Complaint.status != "Pending"
+        ).all()
+
+        return render_template(
+            "dashboard.html",
+            user=user,
+            complaints=complaints,
+            withdrawals=[],
+            is_admin=False,
+            is_user=True,
+            blocked=True
+        )
+
+    complaints = Complaint.query.filter_by(
+        user_id=user.id
+    ).order_by(Complaint.created_at.desc()).all()
+
     return render_template(
-    "withdraw.html",
-    balance= worker.balance,
-    data={"salary": worker.balance}
-)
+        "dashboard.html",
+        user=user,
+        complaints=complaints,
+        withdrawals=[],
+        is_admin=False,
+        is_user=True,
+        blocked=False
+    )
 
+@app.route("/notifications/read")
+def mark_notifications_read():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
 
+    Notification.query.filter_by(
+        user_id=session["user_id"],
+        is_read=False
+    ).update({"is_read": True})
 
+    db.session.commit()
+    return redirect(url_for("worker_dashboard"))
 
+@app.route("/notifications")
+def notifications():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    notes = Notification.query.filter_by(
+        user_id=session["user_id"]
+    ).order_by(Notification.created_at.desc()).all()
+
+    # mark all as read
+    Notification.query.filter_by(
+        user_id=session["user_id"],
+        is_read=False
+    ).update({"is_read": True})
+
+    db.session.commit()
+
+    return render_template("notifications.html", notifications=notes)
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, use_reloader=False)
+

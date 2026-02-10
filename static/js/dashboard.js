@@ -32,10 +32,49 @@ new Chart(barChart,{
     }
 });
 
-new Chart(pieChart,{
-    type:"doughnut",
-    data:{
-        labels:["Approved","Pending"],
-        datasets:[{data:[70,30]}]
+const pieChart = new Chart(document.getElementById("pieChart"), {
+  type: "doughnut",
+  data: {
+    labels: ["Approved", "Pending", "Rejected", "Completed"],
+    datasets: [{
+      data: [6, 1, 2, 4],
+      backgroundColor: [
+        "#38bdf8", // Approved - blue
+        "#facc15", // Pending - yellow
+        "#fb7185", // Rejected - red
+        "#4ade80"  // Completed - green
+      ],
+      borderWidth: 2,
+      borderColor: "#ffffff"
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,   // 🔥 MUST
+    cutout: "65%",                // Perfect donut
+    plugins: {
+      legend: {
+        position: "top",          // 🔥 BEST FOR DASHBOARD
+        labels: {
+          color: "#ffffff",
+          padding: 15,
+          boxWidth: 18
+        }
+      },
+      tooltip: {
+        backgroundColor: "#111827",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
+        borderColor: "#38bdf8",
+        borderWidth: 1
+      }
+    },
+    animation: {
+      animateScale: true,
+      animateRotate: true,
+      duration: 1200,
+      easing: "easeOutQuart"
     }
+  }
 });
+

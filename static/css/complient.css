@@ -145,3 +145,137 @@ button:active {
     font-size: 20px;
   }
 }
+/* ================= RESET ================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ================= PAGE ================= */
+body {
+  background: #f4f6f9;
+  color: #222;
+}
+
+/* ================= CONTAINER ================= */
+.container {
+  max-width: 520px;
+  margin: 40px auto;
+  background: #ffffff;
+  padding: 25px 28px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ================= TITLE ================= */
+.container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #112e51;
+  font-size: 22px;
+}
+
+/* ================= FORM FIELD ================= */
+.field {
+  margin-bottom: 18px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+/* ================= INPUTS ================= */
+.field select,
+.field textarea,
+.field input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* ================= FOCUS ================= */
+.field select:focus,
+.field textarea:focus,
+.field input:focus {
+  outline: none;
+  border-color: #112e51;
+  box-shadow: 0 0 0 2px rgba(17, 46, 81, 0.15);
+}
+
+/* ================= CAMERA ================= */
+video {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+/* ================= CAPTURE BUTTON ================= */
+#snap {
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: #0b5ed7;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#snap:hover {
+  background: #094db3;
+}
+
+/* ================= SUBMIT BUTTON ================= */
+button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: #112e51;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+button[type="submit"]:hover {
+  background: #0d2440;
+  transform: translateY(-1px);
+}
+
+/* ================= OTHER FIELD ================= */
+#otherBox {
+  background: #f8f9fc;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px dashed #cfd8e3;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 600px) {
+  .container {
+    margin: 20px 12px;
+    padding: 20px;
+  }
+
+  video {
+    width: 100%;
+  }
+}

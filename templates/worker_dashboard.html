@@ -3,82 +3,337 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/worker_dashboard.css') }}">
 
-<h2 class="page-title">Worker Dashboard</h2>
+<!-- ================= WORKER TOP BAR ================= -->
+<div class="worker-topbar">
+  <h2>🛠 Worker Dashboard</h2>
 
-{% if complaints %}
-<table class="work-table">
-  <thead>
-    <tr>
-      <th>No</th>
-      <th>Category</th>
-      <th>Description</th>
-      <th>Status</th>
-      <th>Upload Work</th>
-      <th>Salary</th>
-      <th>Withdraw</th>
-      <th>History</th>
-    </tr>
-  </thead>
+  <!-- 🚫 BLOCKED ALERT -->
+  {% if blocked %}
+  <div class="alert alert-danger" style="margin:15px 0;">
+    🚫 <strong>Account Blocked</strong><br>
+    Your account has been blocked due to repeated fake complaints.<br>
+    All actions are disabled.
+  </div>
+  {% endif %}
 
-  <tbody>
-  {% for c in complaints %}
-    <tr>
-      <td>{{ loop.index }}</td>
-      <td>{{ c.category }}</td>
-      <td>{{ c.description }}</td>
-      <td>
-        {% if c.status == "Completed" %}
-          <span class="badge completed">Completed</span>
-        {% else %}
-          <span class="badge pending">Pending</span>
-        {% endif %}
-      </td>
+  <!-- ================= ACTION BUTTONS ================= -->
+  {% if not blocked %}
+  <div class="worker-actions">
 
-      <!-- UPLOAD WORK -->
-      <td>
-        {% if c.status != "Completed" %}
-        <form method="POST"
-              action="{{ url_for('worker_upload', id=c.id) }}"
-              enctype="multipart/form-data">
+    <a href="{{ url_for('worker_salary') }}" class="btn btn-salary">💰 Salary</a>
 
-          <input type="file" name="work_image" required>
-          <button type="submit" class="btn-submit">
-            ✅ Submit
-          </button>
-        </form>
-        {% else %}
-          ✔ Done
-        {% endif %}
-      </td>
+    {% if balance > 0 %}
+      <a href="{{ url_for('withdraw') }}" class="btn btn-withdraw">💸 Withdraw</a>
+    {% else %}
+      <button class="btn btn-withdraw disabled" disabled>💸 Withdraw</button>
+    {% endif %}
 
-      <!-- SALARY -->
-      <td>
-        <a href="{{ url_for('worker_salary') }}" class="btn-salary">
-          View
-        </a>
-      </td>
+    <a href="{{ url_for('withdraw_history') }}" class="btn btn-history">📜 History</a>
+    <a href="{{ url_for('salary_pdf') }}" class="btn btn-slip">📄 Salary Slip</a>
 
-      <!-- WITHDRAW -->
-      <td>
-        <a href="{{ url_for('withdraw') }}" class="btn-withdraw">
-          💸 Withdraw
-        </a>
-      </td>
+    <!-- 🔔 Notification Bell -->
+    <a href="{{ url_for('notifications') }}" class="btn btn-bell">
+      🔔
+      {% if unread_count > 0 %}
+        <span class="bell-badge">{{ unread_count }}</span>
+      {% endif %}
+    </a>
 
-      <!-- HISTORY -->
-      <td>
-        <a href="{{ url_for('withdraw_history') }}" class="btn-history">
-          📜 History
-        </a>
-      </td>
+    <a href="{{ url_for('logout') }}" class="btn btn-logout">🚪 Logout</a>
 
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>No work assigned.</p>
+    <button id="themeToggle" class="btn btn-theme">🌙 Dark</button>
+    <select id="colorPicker">
+      <option value="#1e3c72">Blue</option>
+      <option value="#28a745">Green</option>
+      <option value="#6f42c1">Purple</option>
+    </select>
+
+  </div>
+  {% endif %}
+</div>
+<!-- ===== WORK AVAILABILITY CARD ===== -->
+<div class="availability-card">
+  <div class="availability-left">
+    <h3>Work Status</h3>
+
+    {% if worker.status == 'emergency_leave' %}
+      <span class="leave-badge">🚨 On Emergency Leave</span>
+    {% else %}
+      <span id="statusText" class="status-text {{ worker.status }}">
+        {{ worker.status|capitalize }}
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- ✅ ONLINE / OFFLINE TOGGLE -->
+  <label class="switch">
+    <input type="checkbox"
+           id="onlineToggle"
+           {% if worker.is_online %}checked{% endif %}>
+    <span class="slider"></span>
+  </label>
+</div>
+
+<style>
+  /* ===== ZOMATO STYLE AVAILABILITY ===== */
+
+.availability-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+
+.availability-left h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.status-text {
+  font-weight: bold;
+  margin-top: 6px;
+  display: inline-block;
+}
+
+.status-text.available {
+  color: #16a34a;
+}
+
+.status-text.offline {
+  color: #6b7280;
+}
+
+.leave-badge {
+  display: inline-block;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* ===== TOGGLE SWITCH ===== */
+
+.zomato-switch {
+  position: relative;
+  width: 62px;
+  height: 34px;
+}
+
+.zomato-switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #9ca3af;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: 0.4s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  left: 4px;
+  top: 4px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background: #16a34a;
+}
+
+input:checked + .slider::before {
+  transform: translateX(28px);
+}
+
+</style>
+<!-- ================= BLOCKED INFO CARD ================= -->
+{% if blocked %}
+<div class="card" style="border-left:5px solid red; margin:20px 0;">
+  <h4>🚫 Blocked Member</h4>
+  <p>
+    This worker account is currently <b>BLOCKED</b>.<br>
+    Please contact admin for review.
+  </p>
+</div>
 {% endif %}
 
-{% endblock %}
+<!-- ================= FAKE COMPLAINT WARNING ================= -->
+{% if worker.fake_complaints > 0 and not blocked %}
+<div class="alert alert-warning mt-3">
+  ⚠️ <strong>Fake Complaint Warning</strong><br>
+  You have <b>{{ 3 - worker.fake_complaints }}</b> chance(s) remaining.
+</div>
+{% endif %}
 
+<!-- ================= PERFORMANCE CARDS ================= -->
+<div class="cards">
+  <div class="card">✅ Jobs: {{ completed_jobs }}</div>
+  <div class="card">⭐ Rating: {{ avg_rating }}</div>
+  <div class="card">💰 Balance: ₹ {{ balance }}</div>
+</div>
+
+<!-- ================= WORK TABLE ================= -->
+{% if not blocked %}
+  {% if complaints %}
+  <div class="table-responsive mt-4">
+    <table class="work-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Upload Work</th>
+          <th>Amount</th>
+          <th>Deadline</th>
+        </tr>
+      </thead>
+      <tbody>
+
+      {% set category_map = {
+        "1": "Water",
+        "2": "Road",
+        "3": "Electricity",
+        "4": "Garbage",
+        "5": "Other"
+      } %}
+
+      {% for c in complaints %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ category_map.get(c.category|string, c.category) }}</td>
+        <td>{{ c.description }}</td>
+
+        <td>
+          {% if c.status == "Pending" %}
+            <span class="badge pending">Pending</span>
+          {% elif c.status == "In Progress" %}
+            <span class="badge in-progress">In Progress</span>
+          {% elif c.status == "Completed" %}
+            <span class="badge completed">Waiting Approval</span>
+          {% elif c.status == "Approved" %}
+            <span class="badge approved">Approved</span>
+          {% elif c.status == "Rejected" %}
+            <span class="badge rejected">Rejected</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if c.status == "In Progress" %}
+          <form method="POST"
+                action="{{ url_for('worker_upload', id=c.id) }}"
+                enctype="multipart/form-data">
+            <input type="file" name="work_image" accept="image/*" required>
+            <button type="submit" class="btn btn-submit">Submit</button>
+          </form>
+          {% else %}
+            <span class="locked">🔒 Locked</span>
+          {% endif %}
+        </td>
+
+        <td>₹ {{ c.amount or 0 }}</td>
+
+        <td>
+          {% if c.deadline %}
+            <span class="timer" data-deadline="{{ c.deadline.isoformat() }}"></span>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="no-work">No work assigned yet.</p>
+  {% endif %}
+{% endif %}
+
+<!-- ================= TIMER SCRIPT ================= -->
+
+<script>
+const toggle = document.getElementById("onlineToggle");
+
+if (toggle) {
+  toggle.addEventListener("change", () => {
+    fetch("/worker/toggle-status", {
+      method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        alert(data.error);
+        toggle.checked = false;
+      } else if (data.status) {
+        const statusText = document.getElementById("statusText");
+        statusText.innerText =
+          data.status.charAt(0).toUpperCase() + data.status.slice(1);
+        statusText.className = "status-text " + data.status;
+      }
+    });
+  });
+}
+</script>
+
+
+<script>
+function updateTimers() {
+  document.querySelectorAll(".timer").forEach(t => {
+    const d = new Date(t.dataset.deadline).getTime();
+    const diff = d - Date.now();
+
+    if (diff <= 0) {
+      t.innerHTML = "⛔ Time Over";
+      return;
+    }
+
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    t.innerHTML = `${h}h ${m}m ${s}s`;
+  });
+}
+setInterval(updateTimers, 1000);
+updateTimers();
+</script>
+
+<!-- ================= STYLES ================= -->
+<style>
+.btn-bell {
+  position: relative;
+  font-size: 20px;
+  text-decoration: none;
+}
+.bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 6px;
+}
+.badge.rejected {
+  color: red;
+  background-color: rgb(238, 194, 172);
+}
+</style>
+
+{% endblock %}

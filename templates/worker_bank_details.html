@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+/* ===== Page Background (optional) ===== */
+body {
+  background: #f4f6fb;
+}
+
+/* ===== Form Card ===== */
+.form-box {
+  max-width: 460px;
+  margin: 60px auto;
+  background: #ffffff;
+  padding: 30px 28px;
+  border-radius: 14px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+/* ===== Heading ===== */
+.form-box h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 22px;
+  color: #1e3c72;
+}
+
+/* ===== Labels ===== */
+label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-top: 16px;
+  display: block;
+}
+
+/* ===== Inputs ===== */
+input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1.6px solid #d6dbe3;
+  font-size: 14px;
+  transition: all 0.25s ease;
+  background: #fafbfc;
+}
+
+/* ===== Focus Effect ===== */
+input:focus {
+  border-color: #1e3c72;
+  box-shadow: 0 0 0 3px rgba(30,60,114,0.15);
+  outline: none;
+  background: #fff;
+}
+
+/* ===== Readonly Inputs ===== */
+input[readonly] {
+  background: #eef2f7;
+  cursor: not-allowed;
+  font-weight: 600;
+}
+
+/* ===== IFSC Message ===== */
+small {
+  font-size: 12.5px;
+  margin-top: 6px;
+  display: block;
+}
+
+/* ===== Save Button ===== */
+button {
+  width: 100%;
+  margin-top: 26px;
+  padding: 13px;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* ===== Button Hover ===== */
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(30,60,114,0.35);
+}
+
+/* ===== Disabled Button ===== */
+button:disabled {
+  background: #b0b7c3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== Animation ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+<!-- ✅ FORM BOX START -->
+<div class="form-box">
+  <h2>🏦 Add Bank Details</h2>
+
+  <form method="POST" action="{{ url_for('worker_bank_details') }}">
+
+    <!-- ACCOUNT NUMBER -->
+    <label>Account Number</label>
+    <input name="account_number" placeholder="Enter account number" required>
+
+    <!-- IFSC -->
+    <label>IFSC Code</label>
+    <input
+      id="ifsc"
+      name="ifsc_code"
+      placeholder="Ex: SBIN0001234"
+      onkeyup="fetchIFSC()"
+      required
+    >
+    <small id="ifscMsg"></small>
+
+    <!-- AUTO FETCHED -->
+    <label>Bank (Auto from IFSC)</label>
+    <input id="autoBank" name="bank_name" readonly>
+
+    <label>Branch (Auto from IFSC)</label>
+    <input id="autoBranch" name="branch_name" readonly>
+
+    <button type="submit" id="saveBtn" disabled>
+      💾 Save Bank Details
+    </button>
+
+  </form>
+</div>
+<!-- ✅ FORM BOX END -->
+
+<!-- ================= SEARCH BANK ================= -->
+<script>
+function filterBanks() {
+  const search = document.getElementById("bankSearch").value.toUpperCase();
+  const options = document.getElementById("bankSelect").options;
+
+  for (let i = 0; i < options.length; i++) {
+    const txt = options[i].text.toUpperCase();
+    options[i].style.display =
+      txt.startsWith(search) || search === "" ? "" : "none";
+  }
+}
+</script>
+
+<!-- ================= IFSC AUTO FETCH ================= -->
+<script>
+function fetchIFSC() {
+  const ifsc = document.getElementById("ifsc").value.toUpperCase();
+  const msg = document.getElementById("ifscMsg");
+  const bank = document.getElementById("autoBank");
+  const branch = document.getElementById("autoBranch");
+  const btn = document.getElementById("saveBtn");
+
+  const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+  if (!regex.test(ifsc)) {
+    msg.innerText = "❌ Invalid IFSC format (Ex: SBIN0001234)";
+    msg.style.color = "red";
+    bank.value = "";
+    branch.value = "";
+    btn.disabled = true;
+    return;
+  }
+
+  fetch(`https://ifsc.razorpay.com/${ifsc}`)
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(data => {
+      bank.value = data.BANK;
+      branch.value = data.BRANCH;
+      msg.innerText = "✅ IFSC verified";
+      msg.style.color = "green";
+      btn.disabled = false;
+    })
+    .catch(() => {
+      msg.innerText = "❌ IFSC not found";
+      msg.style.color = "red";
+      bank.value = "";
+      branch.value = "";
+      btn.disabled = true;
+    });
+}
+</script>
+
+{% endblock %}
