@@ -1253,21 +1253,21 @@ def approve_withdraw(id):
 @app.route("/api/withdraw/monthly")
 def withdraw_monthly():
     if "user_id" not in session:
-        return jsonify([0]*12)
+        return jsonify([0] * 12)
 
     worker_id = session["user_id"]
 
     result = db.session.query(
-        func.month(Withdrawal.created_at),
+        func.extract('month', Withdrawal.created_at).label("month"),
         func.coalesce(func.sum(Withdrawal.amount), 0)
     ).filter(
         Withdrawal.worker_id == worker_id,
         Withdrawal.status == "Approved"
-    ).group_by(func.month(Withdrawal.created_at)).all()
+    ).group_by("month").all()
 
-    data = [0]*12
+    data = [0] * 12
     for month, total in result:
-        data[month-1] = int(total)
+        data[int(month) - 1] = int(total)
 
     return jsonify(data)
 # ================= WORKER =================
