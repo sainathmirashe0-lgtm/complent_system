@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3>✅ Work Approved</h3>
+  <p>The work has been approved successfully.</p>
+  <a href="{{ url_for('admin_complete') }}" class="btn btn-primary">
+    Back to Dashboard
+  </a>
+</div>
+
+{% endblock %}

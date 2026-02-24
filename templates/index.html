@@ -1,93 +1,370 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Submit a Complaint</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  * {
+  box-sizing: border-box;
+  font-family: "Segoe UI", "Poppins", Arial, sans-serif;
+}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/complient.css') }}">
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4f46e5, #9333ea);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 17px;        /* 👈 Yahan se text bada hoga */
+  font-weight: 500;
+  color: #111827;
+  background: white;
+  transition: 0.2s ease;
+}
+
+select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+}
+
+
+/* Card */
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 35px 40px;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #1f2933;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Fields */
+.field {
+  margin-bottom: 18px;
+  
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 15px;
+  transition: 0.2s ease;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+}
+video, canvas, img {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-top: 10px;
+  display: block;
+}
+
+#canvas {
+  display: none;
+}
+
+#preview {
+  display: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#startCam, #snap {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4f7df3;
+  color: white;
+  cursor: pointer;
+}
+
+#snap { background:#28a745; }
+
+
+
+/* Button */
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Message */
+.msg {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .container {
+    padding: 28px 22px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+}
+
+</style>
+
+</head>
+<body>
 
 <div class="container">
   <h2>Submit a Complaint</h2>
 
-  <!-- 🚫 ADMIN BLOCK MESSAGE -->
-  {% if session.get("user_role") == "admin" %}
-    <div class="alert alert-warning">
-      🚫 <strong>Admin is not allowed to submit complaints.</strong><br>
-      Please use a normal user account.
-    </div>
-
-  {% else %}
-
-  <!-- ✅ COMPLAINT FORM (ONLY FOR USERS) -->
   <form method="POST" enctype="multipart/form-data">
 
-    <!-- CATEGORY -->
     <div class="field">
       <label>Category</label>
-      <select name="category" id="category" onchange="toggleOther()" required>
+      <select name="category" id="category" onchange="toggleOther()">
         <option value="">-- Select Category --</option>
-        <option value="Water">Water</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Road">Road</option>
-        <option value="Garbage">Garbage</option>
-        <option value="Other">Other</option>
+        <option value="5">Water</option>
+        <option value="4">Electricity</option>
+        <option value="3">Road</option>
+        <option value="2">Garbage</option>
+        <option value="1">Other</option>
       </select>
     </div>
 
-    <!-- OTHER CATEGORY -->
     <div class="field" id="otherBox" style="display:none;">
       <label>Other Complaint</label>
       <input type="text" name="other_complaint" placeholder="Enter your other complaint">
     </div>
+    <div class="field">
+         <label>Mobile Number</label>
+         <input
+         type="tel"
+         name="mobile_number"
+         placeholder="Enter 10-digit mobile number"
+         pattern="[0-9]{10}"
+         maxlength="10"
+         required
+         >
+     </div>
 
-    <!-- DESCRIPTION -->
     <div class="field">
       <label>Description</label>
       <textarea name="description" required></textarea>
     </div>
 
-    <!-- ⭐ REWARD POINTS DISCOUNT (CORRECT PLACE) -->
-    <div class="field">
-      {% if user.reward_points|default(0) >= 10 %}
-        <label>
-          <input type="checkbox" name="use_points" value="yes">
-          Use 10 points to get ₹50 discount
-        </label>
-        <br>
-        <small class="text-muted">
-          Available points: {{ user.reward_points }}
-        </small>
-      {% else %}
-        <small class="text-muted">
-          You need at least 10 reward points to get a discount.
-          <br>
-          Current points: {{ user.reward_points|default(0) }}
-        </small>
-      {% endif %}
-    </div>
-
-    <!-- LIVE CAMERA -->
+    <!-- Live Camera -->
     <div class="field">
       <label>Live Photo</label><br>
       <video id="video" width="300" autoplay></video><br>
+      <button type="button" id="startCam">Start Camera</button>
       <button type="button" id="snap">Capture Photo</button>
       <canvas id="canvas" style="display:none;"></canvas>
       <input type="hidden" name="photoData" id="photoData">
     </div>
+    <p id="addressBox" style="margin-top:10px;font-weight:bold;color:#0a2540;"></p>
+    <input type="hidden" name="address" id="address">
+    
 
-    <!-- SUBMIT -->
+
+
+    <!-- GPS Location -->
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
+
     <button type="submit">Submit Complaint</button>
-
   </form>
-
-  {% endif %}
 </div>
 
-<script src="{{ url_for('static', filename='js/project.js') }}"></script>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* ===============================
+   ELEMENT REFERENCES
+================================ */
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const photoData = document.getElementById("photoData");
+const ctx = canvas.getContext("2d");
+
+/* ===============================
+   CATEGORY TOGGLE
+================================ */
 function toggleOther() {
-  let category = document.getElementById("category").value;
-  let otherBox = document.getElementById("otherBox");
-  otherBox.style.display = (category === "Other") ? "block" : "none";
+  const category = document.getElementById("category").value;
+  const otherBox = document.getElementById("otherBox");
+  otherBox.style.display = category === "1" ? "block" : "none";
 }
+
+/* ===============================
+   START CAMERA
+================================ */
+document.getElementById("startCam").addEventListener("click", async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
+    });
+    video.srcObject = stream;
+  } catch (err) {
+    alert("❌ Camera permission denied or not available");
+  }
+});
+
+/* ===============================
+   CAPTURE PHOTO + GPS + ADDRESS
+================================ */
+document.getElementById("snap").addEventListener("click", () => {
+
+  if (!video.srcObject) {
+    alert("⚠️ Please start camera first");
+    return;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+
+  if (!navigator.geolocation) {
+    alert("❌ Geolocation not supported");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      document.getElementById("latitude").value = lat;
+      document.getElementById("longitude").value = lng;
+
+      let address = "Address not available";
+
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+        );
+        const data = await res.json();
+        address = data.display_name || address;
+      } catch (e) {
+        console.warn("Reverse geocoding failed");
+      }
+
+      document.getElementById("address").value = address;
+      document.getElementById("addressBox").innerText = "📍 " + address;
+
+      /* ===============================
+         OVERLAY ON IMAGE
+      ================================ */
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(0, canvas.height - 160, canvas.width, 160);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "18px Arial";
+
+      const time = new Date().toLocaleString();
+
+      ctx.fillText("📍 " + address, 15, canvas.height - 90);
+      ctx.fillText(`Lat: ${lat}  Long: ${lng}`, 15, canvas.height - 55);
+      ctx.fillText(time, 15, canvas.height - 25);
+
+      /* ===============================
+         SAVE IMAGE
+      ================================ */
+      photoData.value = canvas.toDataURL("image/jpeg", 0.9);
+
+      alert("✅ Photo captured with GPS details!");
+    },
+
+    (error) => {
+      if (error.code === error.PERMISSION_DENIED) {
+        alert("❌ Location permission denied");
+      } else if (error.code === error.TIMEOUT) {
+        alert("⏱️ Location timeout. Please turn ON GPS and try again");
+      } else {
+        alert("❌ Location unavailable");
+      }
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 25000,   // IMPORTANT for mobile
+      maximumAge: 0
+    }
+  );
+});
+
+/* ===============================
+   STOP CAMERA ON PAGE LEAVE
+================================ */
+window.addEventListener("beforeunload", () => {
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+  }
+});
 </script>
 
-{% endblock %}
+</body>
+</html>

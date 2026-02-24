@@ -156,28 +156,39 @@ a:hover {
     <!-- ✅ SINGLE FORM ONLY -->
     <form method="POST">
 
-      <label><b>Select Worker</b></label>
+  {% if workers_by_dept %}
 
-      <select name="worker_id" required style="width:100%;padding:8px;margin-top:5px;">
-        <option value="">-- Select Worker --</option>
+    <label><b>Select Worker</b></label>
 
-        {% for dept, dept_workers in workers_by_dept.items() %}
-          <optgroup label="{{ dept }} Department">
-            {% for w in dept_workers %}
-              <option value="{{ w.id }}">
-                {{ w.email }}
-              </option>
-            {% endfor %}
-          </optgroup>
-        {% endfor %}
-      </select>
+    <select name="worker_id" required style="width:100%;padding:8px;margin-top:5px;">
+      <option value="">-- Select Worker --</option>
 
-      <br><br>
+      {% for dept, dept_workers in workers_by_dept.items() %}
+        <optgroup label="{{ dept }} Department">
+          {% for w in dept_workers %}
+            <option value="{{ w.id }}">
+              {{ w.email }}
+            </option>
+          {% endfor %}
+        </optgroup>
+      {% endfor %}
+    </select>
 
-      <button type="submit" class="btn btn-success w-100">✅ Assign Worker</button>
+    <br><br>
 
+    <button type="submit" class="btn btn-success w-100">
+      ✅ Assign Worker
+    </button>
 
-    </form>
+  {% else %}
+
+    <p style="color:red;text-align:center;font-weight:600;">
+      🚫 No workers are currently online
+    </p>
+
+  {% endif %}
+
+</form>
 
     <br>
     <a href="{{ url_for('dashboard') }}" style="text-decoration:none;">

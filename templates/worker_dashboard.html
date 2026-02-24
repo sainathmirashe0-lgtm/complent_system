@@ -40,14 +40,6 @@
     </a>
 
     <a href="{{ url_for('logout') }}" class="btn btn-logout">🚪 Logout</a>
-
-    <button id="themeToggle" class="btn btn-theme">🌙 Dark</button>
-    <select id="colorPicker">
-      <option value="#1e3c72">Blue</option>
-      <option value="#28a745">Green</option>
-      <option value="#6f42c1">Purple</option>
-    </select>
-
   </div>
   {% endif %}
 </div>
@@ -86,6 +78,145 @@
   border-radius: 14px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.08);
   margin-bottom: 20px;
+}
+/* ===============================
+   WORKER ACTIONS CONTAINER
+   =============================== */
+.worker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ===============================
+   COMMON BUTTON STYLE
+   =============================== */
+.worker-actions .btn {
+  height: 46px;                 /* 🔥 FIXED HEIGHT */
+  min-height: 46px;
+  padding: 0 18px;              /* horizontal padding */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* ===============================
+   DISABLED BUTTON
+   =============================== */
+.worker-actions .btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===============================
+   NOTIFICATION BELL
+   =============================== */
+.btn-bell {
+  position: relative;
+  width: 46px;                  /* square bell */
+  padding: 0;
+}
+
+.bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===============================
+   RESPONSIVE FIX
+   =============================== */
+@media (max-width: 576px) {
+  .worker-actions .btn {
+    width: 100%;               /* full-width buttons on mobile */
+  }
+
+  .btn-bell {
+    width: 100%;
+  }
+}
+/* ===============================
+   WORKER ACTION BUTTON GROUP
+   =============================== */
+.worker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;                 /* 🔥 space between buttons */
+  margin-top: 20px;         /* 🔥 space from top content */
+  margin-bottom: 20px;      /* 🔥 space from bottom content */
+  align-items: center;
+}
+
+/* ===============================
+   COMMON BUTTON STYLE
+   =============================== */
+.worker-actions .btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+/* ===============================
+   INDIVIDUAL MARGINS (OPTIONAL)
+   =============================== */
+
+/* Salary */
+.btn-salary {
+  margin-right: 4px;
+}
+
+/* Withdraw */
+.btn-withdraw {
+  margin-right: 4px;
+}
+
+/* History */
+.btn-history {
+  margin-right: 4px;
+}
+
+/* Salary Slip */
+.btn-slip {
+  margin-right: 8px;
+}
+
+/* Bell icon */
+.btn-bell {
+  position: relative;
+  margin-left: 6px;
+}
+
+/* Logout button */
+.btn-logout {
+  margin-left: auto;        /* 🔥 pushes logout to right (desktop) */
 }
 
 .availability-left h3 {
@@ -149,7 +280,9 @@
   border-radius: 50%;
   transition: 0.4s;
 }
-
+ .btn-submit {
+  border:2px #16a34a solid;
+ }
 input:checked + .slider {
   background: #16a34a;
 }

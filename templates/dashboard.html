@@ -1,7 +1,6 @@
 {% extends "base.html" %} {% block content %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
-
 <div class="container-fluid">
     <!-- ================= HHS NAVBAR ================= -->
     <div class="hhs-navbar">
@@ -13,25 +12,22 @@
             <button class="hhs-btn active" onclick="showOverview()">Overview</button>
 
             <button class="hhs-btn" onclick="showComplaints()">All Complaints</button>
-
-            {% if is_admin %}            
+          {% if is_admin %}
             <button class="hhs-btn warning"  onclick="showWithdrawals()">Workers Withdrawal</button>
-            <!-- ===== LIVE WORKER STATUS ===== -->
-            <div class="live-worker-box">
-               <h3>🟢 Live Worker Status</h3><ul id="workerList"></ul></div>
 
-            {% endif %}
+          {% endif %}
+           
             {% if not user.is_blocked %}
               <a href="{{ url_for('solution') }}" class="hhs-btn success"> Give Solution </a>
               <a href="{{ url_for('index') }}" class="hhs-btn success">Add Complaints</a>
-              <a href="{{ url_for('all_solutions') }}" class="hhs-btn success">view Solution</a>
+              <a href="{{ url_for('all_solutions') }}" class="hhs-btn success">View Solution</a>
             {% else %}
              <span class="hhs-btn disabled">🚫 Actions Disabled</span>
            {% endif %}
 
             <a href="{{ url_for('login') }}" class="hhs-btn success">logout </a>
             {% if is_user %}   
-             <a href="{{ url_for('coupon') }}" class="btn btn-primary mt-2">🎁 Go to Coupon & Redeem</a>
+             <a href="{{ url_for('coupon') }}" class="hhs-btn success">🎁 Go to Coupon & Redeem</a>
             {% endif %}
             <a href="{{ url_for('notifications') }}" class="btn btn-bell">🔔</a>
 
@@ -42,8 +38,8 @@
 
   <!-- Reward Points -->
   {% if is_user %}
-  <div class="col-lg-3 col-md-6 col-sm-12">
-    <div class="card reward-points-card h-100">
+  <div class="box3">
+    <div class="boxx3">
       <h6>Reward Points</h6>
       <h2>{{ user.reward_points }}</h2>
       <small>Use points to get discount</small>
@@ -52,29 +48,35 @@
   {% endif %}
 
   <!-- Total Complaints -->
-  <div class="col-lg-3 col-md-6 col-sm-12">
-    <div class="card p-3 h-100">
+  <div class="box2">
+    <div class="boxx2">
       <h6>Total Complaints</h6>
       <h2>{{ complaints|length }}</h2>
     </div>
   </div>
 
   <!-- Approved -->
-  <div class="col-lg-3 col-md-6 col-sm-12">
-    <div class="card p-3 h-100 bg-success text-white">
+  <div class="box1">
+    <div class="boxx1">
       <h6>Approved</h6>
       <h2>{{ complaints | selectattr("status","equalto","Approved") | list | length }}</h2>
     </div>
   </div>
 
   <!-- Pending -->
-  <div class="col-lg-3 col-md-6 col-sm-12">
-    <div class="card p-3 h-100 bg-warning">
+  <div class="box">
+    <div class="boxx">
       <h6>Pending</h6>
       <h2>{{ complaints | selectattr("status","equalto","Pending") | list | length }}</h2>
     </div>
   </div>
+ {% if is_admin %}            
+           
+            <!-- ===== LIVE WORKER STATUS ===== -->
+            <div class="live-worker-box">
+               <h3>🟢 Live Worker Status</h3><ul id="workerList"></ul></div>
 
+  {% endif %}
 </div>
 
     <!-- ================= OVERVIEW ================= -->
@@ -111,6 +113,8 @@
                         <th>Category</th>
                         <th>Description</th>
                         <th>Photo</th>
+                        <th>Map</th>
+                        <th>Mobile</th>
                         <th>Status</th>
                         <th>Assigned To</th>
                         <th>Work Proof</th>
@@ -123,6 +127,7 @@
                     </tr>
                 </thead>
                   <tbody>
+
 {% for c in complaints %}
 <tr>
   <td>{{ loop.index }}</td>
@@ -139,7 +144,23 @@
       —
     {% endif %}
   </td>
+<td>
+  {% if c.latitude and c.longitude %}
+  <a class="map" href="https://www.google.com/maps?q={{ c.latitude }},{{ c.longitude }}"
+     target="_blank">
+     View Map
+  </a>
+  {% endif %}
+</td>
 
+<td>
+  {% if c.mobile_number %}
+    📞 {{ c.mobile_number }}
+  {% else %}
+    <span style="color:red;">Not Provided</span>
+  {% endif %}
+
+</td>
   <!-- STATUS -->
   <td>
     {% if c.status == "Pending" %}

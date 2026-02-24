@@ -10,32 +10,84 @@
     rel="stylesheet"
   >
 
-  <!-- Custom CSS -->
-  <style>
-    .flash-container {
-      position: fixed;
-      top: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1055;
-      width: 100%;
-      max-width: 420px;
-      pointer-events: none;
-    }
 
-    .flash-container .alert {
-      pointer-events: auto;
-      text-align: center;
-      padding: 8px 16px;
-      margin: 0;
-      font-size: 14px;
-    }
-  </style>
 </head>
+<style>
+  /* ================= FLASH NOTIFICATION ================= */
 
+.flash-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Base Style */
+.flash-message {
+  width: 90%;
+  max-width: 700px;
+  margin-top: 20px;
+  padding: 14px 20px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  animation: slideDown 0.4s ease, fadeOut 0.5s ease 2.5s forwards;
+}
+
+/* SUCCESS */
+.flash-message.success {
+  background: #198754;   /* Bootstrap green */
+}
+
+/* ERROR / DANGER */
+.flash-message.danger,
+.flash-message.error {
+  background: #dc3545;   /* Bootstrap red */
+}
+
+/* WARNING */
+.flash-message.warning {
+  background: #ffc107;
+  color: #000;
+}
+
+/* INFO */
+.flash-message.info {
+  background: #0dcaf0;
+  color: #000;
+}
+
+/* Slide Down Animation */
+@keyframes slideDown {
+  from {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Auto Fade Out */
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+</style>
 <body>
 
-  <!-- 🔔 FLASH MESSAGE (TOP FIXED WITH CSS) -->
+  <!-- 🔔 FLASH MESSAGE -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="flash-container">
@@ -48,8 +100,10 @@
     {% endif %}
   {% endwith %}
 
-  <!-- PAGE CONTENT -->
-  {% block content %}{% endblock %}
+  <!-- ===== PAGE CONTENT (EDGE TO EDGE) ===== -->
+  <div class="page-wrapper">
+    {% block content %}{% endblock %}
+  </div>
 
   <!-- Bootstrap JS -->
   <script

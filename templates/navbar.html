@@ -23,6 +23,9 @@
       <li><a href="#" onclick="showSection(event,'about')">About Portal</a></li>
       <li><a href="#" onclick="showSection(event,'services')">Services</a></li>
       <li><a href="#" onclick="showSection(event,'contact')">Contact</a></li>
+      <li><a href="#" onclick="showSection(event,'cotribution')">Contribution</a></li>
+      <li><a href="{{ url_for('all_solutions') }}">People’s Solution</a></li>
+
     </ul>
 
     <div class="nav-right">
@@ -110,8 +113,58 @@
         <div class="photo-overlay"><h3>Community Cleanliness Drive</h3></div>
       </div>
 
-    </div>
   </section>
+<section class="people-preview">
+  <div class="people-container">
+
+    <div class="people-left">
+      <h2>🌟 People’s Solutions</h2>
+      <p class="solution-count">Total solutions: {{ solutions|length }}</p>
+
+      <a href="{{ url_for('all_solutions') }}" class="btn-primary">
+        View All Solutions
+      </a>
+    </div>
+
+    <div class="people-right">
+      <img src="{{ url_for('static', filename='img/image2.png') }}">
+    </div>
+
+  </div>
+</section>
+<style>
+  .people-preview {
+  padding: 60px 0;
+  background: #f4f6f9;
+}
+
+.people-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 80px;
+}
+
+.people-left {
+  flex: 1;
+}
+
+.people-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.people-right img {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+}
+</style>
+
    <section class="services">
     <div class="container services-grid">
       <a class="service-card" href="{{ url_for('index') }}">📝 Register Complaint</a>
@@ -120,7 +173,6 @@
       <div class="service-card" onclick="showSection(event,'contact')">❓ Help / FAQ</div>
     </div>
   </section>
-
   <!-- ================= HOW IT WORKS ================= -->
   <section class="how">
     <div class="container">
@@ -412,6 +464,138 @@
     </iframe>
   </div>
 </section>
+<!-- ================= CONTRIBUTION ================= -->
+<!-- ================= CONTRIBUTION PAGE ================= -->
+<section id="cotribution" class="page-section">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1>Contribution</h1>
+    <p>
+      This portal is built through the combined efforts of citizens,
+      workers, developers, teachers, and administrators to improve
+      public service delivery.
+    </p>
+  </div>
+
+  <div class="container contribution-container">
+
+    <!-- CITIZENS -->
+    <div class="contribution-card citizen">
+      <h2>👥 Citizens</h2>
+      <ul>
+        <li>Report genuine public issues with accurate details</li>
+        <li>Upload clear photos with correct location</li>
+        <li>Track complaint status regularly</li>
+        <li>Provide honest feedback after resolution</li>
+        <li>Avoid fake or misleading complaints</li>
+      </ul>
+    </div>
+
+    <!-- WORKERS -->
+    <div class="contribution-card worker">
+      <h2>🛠 Workers</h2>
+      <ul>
+        <li>Accept assigned complaints responsibly</li>
+        <li>Complete work within the given deadline</li>
+        <li>Upload genuine work proof images</li>
+        <li>Maintain discipline and professionalism</li>
+        <li>Serve citizens with integrity</li>
+      </ul>
+    </div>
+
+    <!-- GOVERNMENT -->
+    <div class="contribution-card government">
+      <h2>🏛 Government & Administration</h2>
+      <ul>
+        <li>Monitor complaint resolution performance</li>
+        <li>Ensure transparency in approvals and rejections</li>
+        <li>Take action against fake complaints</li>
+        <li>Reward efficient workers</li>
+        <li>Improve public infrastructure planning</li>
+      </ul>
+    </div>
+
+    <!-- DEVELOPERS -->
+   <!-- ================= DEVELOPERS ================= -->
+<div class="contribution-card developers">
+  <h2>💻 Developers & Students</h2>
+
+  <div class="dev-credit">
+    <h4>Frontend & Functional Pages</h4>
+    <p class="dev-name">👤 Om Jadhav</p>
+    <ul>
+      <li>Dashboard UI</li>
+      <li>Login & registration pages</li>
+      <li>Complaint & solution pages</li>
+      <li>Feedback & coupon UI</li>
+      <li>Responsive web design</li>
+    </ul>
+  </div>
+
+  <div class="dev-credit backend">
+    <h4>Backend & Database</h4>
+    <p class="dev-name">👤 Sainath Mirashe</p>
+    <ul>
+      <li>Flask backend logic</li>
+      <li>MySQL database design</li>
+      <li>Complaint workflow & status</li>
+      <li>Authentication & roles</li>
+      <li>Security & API integration</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================= TEACHERS ================= -->
+<div class="contribution-card teachers">
+  <h2>👩‍🏫 Teachers & Mentors</h2>
+
+  <div class="dev-credit">
+    <h4>Web Design & UX Guidance</h4>
+    <p class="dev-name">👩‍🏫 Attal Madam (<b>Mentor</b>)</p>
+    <ul>
+      <li>Solution page structure</li>
+      <li>Solution show in Home page</li>
+      <li>UI/UX clarity & layout improvement</li>
+      <li>Feedback page workflow</li>
+      <li>Coupon & reward flow guidance</li>
+      <li>Project presentation review</li>
+    </ul>
+  </div>
+
+  <div class="dev-credit backend">
+    <h4>System Logic & Admin Flow</h4>
+    <p class="dev-name">👨‍🏫 Amol Sir</p>
+    <ul>
+      <li>Fake complaint rejection logic</li>
+      <li>Admin approve & reject workflow</li>
+      <li>Online worker tracking concept</li>
+      <li>Live worker status validation</li>
+      <li>Overall system logic review</li>
+    </ul>
+  </div>
+</div>
+
+
+  <!-- COMMUNITY IMPACT -->
+  <div class="container">
+    <div class="contribution-impact">
+      <h2>🌍 Community Impact</h2>
+      <p>
+        Every contribution—big or small—helps in building cleaner cities,
+        better infrastructure, and stronger trust between citizens and
+        the government.
+      </p>
+      <p>
+        Together, we can make public services more transparent,
+        efficient, and citizen-friendly.
+      </p>
+    </div>
+  </div>
+
+</section>
+
+
 
 
 <!-- ================= JS ================= -->

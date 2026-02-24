@@ -1,297 +1,300 @@
-/* =========================================================
-   COMPLAINT DASHBOARD – DARK THEME (FULL CSS)
-   Compatible with Flask + Jinja + Bootstrap + Chart.js
-========================================================= */
+/* ==================================================
+   COMPLAINT DASHBOARD – FINAL CLEAN VERSION
+================================================== */
 
-/* ===================== ROOT VARIABLES ===================== */
-:root {
-  --navy-900: #0a2540;
-  --navy-800: #112e51;
-  --navy-700: #205493;
-  --purple-900: #2b1055;
-
-  --cyan: #00f2ff;
-  --green: #22c55e;
-  --yellow: #facc15;
-  --orange: #ff884d;
-  --red: #ef4444;
-
-  --white: #ffffff;
-  --muted: #cbd5e1;
-
-  --glass-dark: rgba(15,20,40,0.9);
-  --card-bg: rgba(255,255,255,0.05);
-
-  --radius-lg: 14px;
-  --radius-md: 10px;
-
-  --shadow-soft: 0 10px 30px rgba(0,0,0,0.35);
-  --shadow-deep: 0 0 40px rgba(0,0,0,0.6);
-}
-
-/* ===================== GLOBAL RESET ===================== */
-*,
-*::before,
-*::after {
+/* ---------- GLOBAL RESET ---------- */
+* {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
 body {
-  margin: 0;
-  font-family: Arial, system-ui, sans-serif;
-  background: linear-gradient(120deg, var(--navy-900), var(--purple-900));
-  color: var(--white);
-  min-height: 100vh;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: #f4f6f9;
+  color: #0f172a;
+  overflow-x: hidden;
 }
 
-::selection {
-  background: var(--cyan);
-  color: #000;
-}
+/* ================= EVEN PROFESSIONAL NAVBAR ================= */
 
-/* ===================== NAVBAR ===================== */
 .hhs-navbar {
-  height: 56px;
-  background: #000;
+  width: 100%;
+  height: 72px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  color: var(--white);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+
+  padding: 0 32px;
+  background: linear-gradient(180deg, #0f172a, #020617);
+  color: #fff;
+
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
+/* Title */
 .hhs-title {
   font-size: 20px;
   font-weight: 600;
-  white-space: nowrap;
 }
 
+/* Center actions */
 .hhs-actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
 }
 
+/* ALL NAV BUTTONS – SAME SIZE */
+/* ===== COMPACT NAV BUTTONS ===== */
+
 .hhs-btn {
+  height: 34px;              /* ↓ Reduced height */
+  min-width: 100px;          /* Slightly smaller width */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 12px;           /* ↓ Less horizontal padding */
+  font-size: 13px;           /* Slightly smaller text */
+  font-weight: 500;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+
   background: transparent;
-  color: var(--white);
-  border: 1px solid var(--white);
-  padding: 6px 14px;
-  font-size: 14px;
-  border-radius: 6px;
-  cursor: pointer;
+  color: #e5e7eb;
   text-decoration: none;
-  transition: all 0.2s ease;
+
+  transition: all 0.25s ease;
 }
 
 .hhs-btn:hover {
-  background: var(--navy-700);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
 }
 
 .hhs-btn.active {
-  background: var(--white);
-  color: var(--navy-800);
-  font-weight: 600;
+  background: #2563eb;
+  border: none;
+  color: #fff;
+}
+/* Right side */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.hhs-btn.warning:hover {
-  background: var(--yellow);
-  color: #000;
+/* Coupon button – SAME HEIGHT */
+.coupon-btn {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+
+  background: #2563eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
 }
 
-/* ===================== DASHBOARD CONTAINER ===================== */
-.dashboard {
-  max-width: 1200px;
-  margin: 40px auto;
-  background: var(--glass-dark);
-  border-radius: var(--radius-lg);
-  padding: 24px 30px;
-  box-shadow: var(--shadow-deep);
+.btn-bell {
+  font-size: 18px;
 }
 
-/* ===================== SUMMARY CARDS ROW ===================== */
+
+/* ==================================================
+   MAIN CONTENT WRAPPER
+================================================== */
+
+.dashboard-container {
+  width: 100%;
+  padding: 32px 40px;   /* Proper side spacing */
+}
+
+/* ==================================================
+   SUMMARY BOXES
+================================================== */
+
 .summary-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 35px;
+  gap: 28px;                  /* Proper spacing between boxes */
+  margin-bottom: 40px;        /* Space below boxes */
 }
+
+/* Common Box Style */
+.boxx,
+.boxx1,
+.boxx2,
+.boxx3 {
+  padding: 26px 28px;
+  border-radius: 18px;
+  box-shadow: 0 14px 35px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
+}
+
+.boxx:hover,
+.boxx1:hover,
+.boxx2:hover,
+.boxx3:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.12);
+}
+
+/* Title inside box */
+.boxx h6,
+.boxx1 h6,
+.boxx2 h6,
+.boxx3 h6 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  opacity: 0.85;
+}
+
+/* Big number */
+.boxx h2,
+.boxx1 h2,
+.boxx2 h2,
+.boxx3 h2 {
+  font-size: 42px;
+  font-weight: 700;
+}
+
+/* Colors */
+.boxx  { background: #e0f2fe; color: #075985; }     /* Reward */
+.boxx1 { background: #fde68a; color: #92400e; }     /* Total */
+.boxx2 { background: #22c55e; color: #fff; }        /* Approved */
+.boxx3 { background: #8b5cf6; color: #fff; }        /* Pending */
+
+/* ==================================================
+   CARDS (CHART SECTION)
+================================================== */
 
 .card {
-  background: var(--card-bg);
-  padding: 22px;
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
-  min-height: 120px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
-.card h6 {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--muted);
-  margin-bottom: 6px;
+.card h5 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 18px;
 }
 
-.card h2 {
-  font-size: 34px;
-  margin: 0;
-  color: var(--cyan);
-}
-
-.card small {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* ===== CARD VARIANTS ===== */
-.reward-points-card {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
-}
-
-.card.approved h2 {
-  color: var(--green);
-}
-
-.card.pending h2 {
-  color: var(--yellow);
-}
-
-.card.rejected h2 {
-  color: var(--red);
-}
-
-/* ===================== CHARTS SECTION ===================== */
-.charts {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-  margin-top: 30px;
-}
-
-.chart-box {
-  background: var(--card-bg);
-  border-radius: var(--radius-md);
-  padding: 18px;
-  box-shadow: inset 0 0 20px rgba(255,255,255,0.04);
-}
-
-.chart-box h5 {
-  font-size: 15px;
-  margin-bottom: 10px;
-  color: var(--white);
-}
-
-/* Canvas fix for Chart.js */
+/* Chart Canvas Fix */
 canvas {
   width: 100% !important;
-  height: 260px !important;
-  max-height: 260px;
-  background: rgba(255,255,255,0.03);
-  border-radius: var(--radius-md);
-  padding: 10px;
+  height: 320px !important;
 }
 
-/* ===================== TABLE (MY COMPLAINTS) ===================== */
+/* ==================================================
+   TABLE
+================================================== */
+
 .table {
-  background: #ffffff;
-  color: #111;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-soft);
-  margin-top: 25px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.summary-row {
+  margin-top: 22px;
+}
+.table thead {
+  background: #111827;
+  color: #fff;
 }
 
-.table thead {
-  background: linear-gradient(135deg, #111827, #1f2937);
-  color: #ffffff;
+.table th,
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
 }
 
 .table tbody tr:hover {
   background: #f1f5f9;
 }
 
-.table img {
-  border-radius: 6px;
-  transition: transform 0.2s ease;
-}
+/* ==================================================
+   RESPONSIVE
+================================================== */
 
-.table img:hover {
-  transform: scale(1.1);
-}
-
-/* ===================== BADGES ===================== */
-.badge {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.badge.approved {
-  background: #bbf7d0;
-  color: #166534;
-}
-
-.badge.pending {
-  background: #fde68a;
-  color: #92400e;
-}
-
-.badge.rejected {
-  background: #fecaca;
-  color: #7f1d1d;
-}
-
-/* ===================== LIGHT MODE (OPTIONAL) ===================== */
-body.light-mode {
-  background: #f4f6f9;
-  color: #111;
-}
-
-body.light-mode .dashboard {
-  background: #ffffff;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
-
-body.light-mode .card {
-  background: #f1f5f9;
-}
-
-body.light-mode .hhs-navbar {
-  background: #ffffff;
-  color: #111;
-}
-
-body.light-mode .hhs-btn {
-  color: #111;
-  border-color: #111;
-}
-
-body.light-mode .hhs-btn:hover {
-  background: #e5e7eb;
-}
-
-/* ===================== RESPONSIVE ===================== */
-@media (max-width: 992px) {
+@media (max-width: 1100px) {
   .summary-row {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .charts {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 600px) {
   .summary-row {
     grid-template-columns: 1fr;
   }
 
-  .dashboard {
+  .dashboard-container {
     padding: 20px;
   }
+
+  .hhs-actions {
+    display: none;
+  }
+}
+/* ================= STATUS BADGES ================= */
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: inline-block;
+}
+
+/* Pending */
+.badge.pending {
+  background-color: #fef3c7;   /* light yellow */
+  color: #92400e;
+}
+
+/* In Progress */
+.badge.in-progress {
+  background-color: #dbeafe;   /* light blue */
+  color: #1e40af;
+}
+
+/* Completed (Waiting Approval) */
+.badge.completed {
+  background-color: #ede9fe;   /* light purple */
+  color: #6d28d9;
+}
+
+/* Approved */
+.badge.approved {
+  background-color: #dcfce7;   /* light green */
+  color: #166534;
+}
+
+/* Rejected */
+.badge.bg-danger {
+  background-color: #fee2e2 !important;  /* light red */
+  color: #991b1b !important;
+}
+
+/* Reject reason text */
+.text-danger {
+  font-size: 12px;
+  margin-top: 4px;
+  display: inline-block;
 }

@@ -172,7 +172,7 @@ function fetchIFSC() {
   const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
   if (!regex.test(ifsc)) {
-    msg.innerText = "❌ Invalid IFSC format (Ex: SBIN0001234)";
+    msg.innerText = " Invalid IFSC format (Ex: SBIN0001234)";
     msg.style.color = "red";
     bank.value = "";
     branch.value = "";
@@ -188,12 +188,12 @@ function fetchIFSC() {
     .then(data => {
       bank.value = data.BANK;
       branch.value = data.BRANCH;
-      msg.innerText = "✅ IFSC verified";
+      msg.innerText = " IFSC verified";
       msg.style.color = "green";
       btn.disabled = false;
     })
     .catch(() => {
-      msg.innerText = "❌ IFSC not found";
+      msg.innerText = " IFSC not found";
       msg.style.color = "red";
       bank.value = "";
       branch.value = "";

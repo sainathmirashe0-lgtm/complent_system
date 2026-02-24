@@ -117,6 +117,10 @@ class Complaint(db.Model):
     description = db.Column(db.Text, nullable=False)
     image = db.Column(db.String(255))
 
+    latitude = db.Column(db.String(50))
+    longitude = db.Column(db.String(50))
+    address = db.Column(db.Text)
+
     status = db.Column(db.String(50), default="Pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -133,6 +137,7 @@ class Complaint(db.Model):
     approved_at = db.Column(db.DateTime)
     deadline = db.Column(db.DateTime)
     reject_reason = db.Column(db.Text)
+    mobile_number = db.Column(db.String(15))  
 
 class Solution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -168,15 +173,23 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class Coupon(db.Model):
-    __tablename__ = "coupons"
 
+class Coupon(db.Model):
+    __tablename__ = "coupon"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    code = db.Column(db.String(20), unique=True, nullable=False)
+    code = db.Column(db.String(50), unique=True, nullable=False)
     discount_percent = db.Column(db.Integer, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False
+    ) 
+    expires_at = db.Column(db.DateTime, nullable=False)  # ✅ ADD THIS
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 
 
 
@@ -241,7 +254,6 @@ def create_notification(user_id, title, message, email=None):
     db.session.add(n)
     db.session.commit()
 
-    # 📧 Email (optional but recommended)
     if email:
         send_email(
             to=email,
@@ -252,69 +264,63 @@ def generate_coupon_code():
     return "OM-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
+
+
 @app.route("/coupon", methods=["GET", "POST"])
+
 @login_and_block_guard()
 def coupon():
-    user = User.query.get_or_404(session["user_id"])
+    user = User.query.get(session["user_id"])
 
-    # 🔥 Fetch ONLY valid coupons (not used + not expired)
+    if request.method == "POST":
+        points = int(request.form["points"])
+        discount = int(request.form["discount"])
+
+        if user.reward_points < points:
+            flash("Not enough points", "danger")
+            return redirect(url_for("coupon"))
+
+        # 🔐 Generate coupon code
+        code = "CPN-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+        new_coupon = Coupon(
+            code=code,
+            discount_percent=discount,
+            user_id=user.id,
+            is_used=False,
+            expires_at=datetime.utcnow() + timedelta(days=15),
+            created_at=datetime.utcnow()
+        )
+
+        user.reward_points -= points
+
+        db.session.add(new_coupon)
+        db.session.commit()
+
+        flash("Coupon generated successfully!", "success")
+        return redirect(url_for("coupon"))
+
+    # ✅ Fetch active coupons
     coupons = Coupon.query.filter(
         Coupon.user_id == user.id,
         Coupon.is_used == False,
         Coupon.expires_at > datetime.utcnow()
     ).order_by(Coupon.created_at.desc()).all()
 
-    # 🔁 Redeem points → create coupon
-    if request.method == "POST":
-        try:
-            points = int(request.form["points"])
-        except (ValueError, TypeError):
-            flash("Invalid points value", "danger")
-            return redirect(url_for("coupon"))
-
-        if points <= 0:
-            flash("Points must be greater than zero", "danger")
-            return redirect(url_for("coupon"))
-
-        if user.reward_points < points:
-            flash("Not enough reward points", "danger")
-            return redirect(url_for("coupon"))
-
-        # 🎯 Dynamic discount logic (cap at 50%)
-        discount = min(50, points // 20)   # 1000 → 50%
-
-        if discount <= 0:
-            flash("Points too low to generate a coupon", "warning")
-            return redirect(url_for("coupon"))
-
-        # 🎟 Generate coupon
-        code = generate_coupon_code()
-        expires_at = datetime.utcnow() + timedelta(days=15)
-
-        new_coupon = Coupon(
-            user_id=user.id,
-            code=code,
-            discount_percent=discount,
-            is_used=False,
-            expires_at=expires_at
-        )
-
-        # 💰 Deduct points
-        user.reward_points -= points
-
-        db.session.add(new_coupon)
-        db.session.commit()
-
-        flash(
-            f"🎉 Coupon created! {discount}% OFF • Valid for 15 days • One-time use",
-            "success"
-        )
-        return redirect(url_for("coupon"))
+    slabs = [
+        {"points": 50, "discount": 5},
+        {"points": 100, "discount": 10},
+        {"points": 150, "discount": 15},
+        {"points": 200, "discount": 20},
+        {"points": 250, "discount": 25},
+        {"points": 300, "discount": 30},
+    ]
 
     return render_template(
         "coupon.html",
         user=user,
-        coupons=coupons
+        coupons=coupons,
+        slabs=slabs
     )
 
 @app.route("/cleanup-expired-coupons")
@@ -472,26 +478,72 @@ def forgot_password():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        if request.form["password"] != request.form["confirm"]:
+
+    step = "form"
+
+    # ---------- STEP 1: REGISTER FORM ----------
+    if request.method == "POST" and "password" in request.form:
+
+        email = request.form["email"]
+        password = request.form["password"]
+        confirm = request.form["confirm"]
+
+        # password match
+        if password != confirm:
             flash("Passwords do not match", "danger")
-            return redirect(url_for("register"))
+            return render_template("register.html", step="form")
 
-        if User.query.filter_by(email=request.form["email"]).first():
-            flash("User already exists", "danger")
-            return redirect(url_for("register"))
+        # already exists
+        if User.query.filter_by(email=email).first():
+            flash("Email already registered", "danger")
+            return render_template("register.html", step="form")
 
-        user = User(
-            email=request.form["email"],
-            password=generate_password_hash(request.form["password"])
+        # generate OTP
+        otp = generate_otp()
+
+        session["reg_email"] = email
+        session["reg_password"] = generate_password_hash(password)
+        session["reg_otp"] = otp
+        session["reg_otp_expiry"] = (
+            datetime.utcnow() + timedelta(minutes=5)
+        ).timestamp()
+
+        # send email
+        send_email(
+            to=email,
+            subject="Verify Your Account",
+            body=f"Your OTP is {otp}. Valid for 5 minutes."
         )
-        db.session.add(user)
-        db.session.commit()
 
-        flash("Registration successful", "success")
-        return redirect(url_for("login"))
+        flash("OTP sent to your email", "success")
+        step = "otp"
 
-    return render_template("register.html")
+    # ---------- STEP 2: OTP VERIFY ----------
+    elif request.method == "POST" and "otp" in request.form:
+
+        user_otp = request.form["otp"]
+
+        if (
+            user_otp != session.get("reg_otp")
+            or datetime.utcnow().timestamp() > session.get("reg_otp_expiry", 0)
+        ):
+            flash("Invalid or expired OTP", "danger")
+            step = "otp"
+        else:
+            # create user
+            user = User(
+                email=session["reg_email"],
+                password=session["reg_password"]
+            )
+            db.session.add(user)
+            db.session.commit()
+
+            session.clear()
+            flash("Account verified & created successfully", "success")
+            return redirect(url_for("login"))
+
+    return render_template("register.html", step=step)
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -538,20 +590,40 @@ def logout():
 @app.route("/index", methods=["GET", "POST"])
 @login_and_block_guard()
 def index():
-    user = User.query.get_or_404(session["user_id"])  # ✅ logged-in user
+
+    user = User.query.get_or_404(session["user_id"])  # logged-in user
 
     if request.method == "POST":
+
+        # ================= MOBILE NUMBER =================
+        mobile_number = request.form.get("mobile_number")
+        if not mobile_number or not re.match(r"^[6-9]\d{9}$", mobile_number):
+            flash("❌ Enter a valid 10-digit mobile number", "danger")
+            return redirect(url_for("index"))
+
+        # ================= LOCATION DATA (NEW) =================
+        latitude = request.form.get("latitude")
+        longitude = request.form.get("longitude")
+        address = request.form.get("address")
+
+        # ================= IMAGE CAPTURE =================
         image_path = None
         photo_data = request.form.get("photoData")
 
-        # ================= IMAGE CAPTURE =================
         if photo_data:
-            _, encoded = photo_data.split(",", 1)
-            img = base64.b64decode(encoded)
-            name = datetime.now().strftime("%Y%m%d%H%M%S") + ".png"
-            with open(os.path.join(UPLOAD_FOLDER, name), "wb") as f:
-                f.write(img)
-            image_path = f"uploads/{name}"
+            try:
+                _, encoded = photo_data.split(",", 1)
+                img = base64.b64decode(encoded)
+                name = datetime.now().strftime("%Y%m%d%H%M%S") + ".png"
+                with open(os.path.join(UPLOAD_FOLDER, name), "wb") as f:
+                    f.write(img)
+                image_path = f"uploads/{name}"
+            except Exception:
+                flash("❌ Image processing failed", "danger")
+                return redirect(url_for("index"))
+        else:
+            flash("❌ Photo with location is required", "danger")
+            return redirect(url_for("index"))
 
         # ================= BASE PRICE =================
         BASE_PRICE = 500
@@ -577,27 +649,35 @@ def index():
 
             if coupon:
                 discount += int(BASE_PRICE * (coupon.discount_percent / 100))
-                coupon.is_used = True   # ✅ ONE-TIME USE
+                coupon.is_used = True
             else:
                 flash("❌ Invalid, expired, or already used coupon", "danger")
 
         # ================= FINAL AMOUNT =================
         final_amount = max(0, BASE_PRICE - discount)
 
-        # ================= SAVE COMPLAINT =================
+        # ================= SAVE COMPLAINT (UPDATED) =================
         complaint = Complaint(
             category=request.form["category"],
             description=request.form["description"],
+            mobile_number=mobile_number,
             image=image_path,
             user_id=user.id,
-            amount=final_amount
+            amount=final_amount,
+
+            # 🔥 LOCATION FIELDS ADDED
+            latitude=latitude,
+            longitude=longitude,
+            address=address,
+
+            status="Pending"
         )
 
         db.session.add(complaint)
         db.session.commit()
 
         flash(
-            f"✅ Complaint submitted successfully. Amount charged: ₹{final_amount}",
+            f"✅ Complaint submitted successfully.",
             "success"
         )
         return redirect(url_for("dashboard"))
@@ -605,14 +685,20 @@ def index():
     # ================= GET REQUEST =================
     return render_template("index.html", user=user)
 
-
-
-
 # ================= DASHBOARD =================
 
 @app.route("/")
 def home():
-    return render_template("navbar.html")
+    solutions = Solution.query.order_by(
+        Solution.created_at.desc()
+    ).limit(3).all()
+
+    return render_template(
+        "navbar.html",
+        solutions=solutions
+    )
+
+
 
 @app.route("/worker/dashboard")
 def worker_dashboard():
@@ -924,12 +1010,13 @@ def assign_worker(id):
     complaint = Complaint.query.get_or_404(id)
 
     if request.method == "POST":
-        worker_id = request.form.get("worker_id")
+        worker_id = request.form.get("worker_id", type=int)
 
         worker = User.query.filter_by(
             id=worker_id,
             role="worker",
-            status="available"
+            status="available",
+            is_online=True
         ).first()
 
         if not worker:
@@ -939,17 +1026,16 @@ def assign_worker(id):
         complaint.assigned_to = worker.id
         complaint.status = "In Progress"
 
-        # 🔒 LOCK WORKER
         worker.status = "busy"
 
         db.session.commit()
         flash("Worker assigned successfully", "success")
         return redirect(url_for("dashboard"))
 
-    # ✅ ONLY AVAILABLE WORKERS
     workers = User.query.filter_by(
         role="worker",
-        status="available"
+        status="available",
+        is_online=True
     ).all()
 
     workers_by_dept = {}
@@ -962,7 +1048,6 @@ def assign_worker(id):
         complaint=complaint,
         workers_by_dept=workers_by_dept
     )
-
 
 
 @app.route("/admin/withdraw/reject/<int:id>", methods=["POST"])
@@ -1111,7 +1196,7 @@ def submit_rating(complaint_id):
 
     db.session.commit()
 
-    flash(f"₹{amount} added to worker balance", "success")
+    flash( "feedback is summited successfully!", "success")
     return redirect(url_for("dashboard"))
 
 @app.route('/admin/withdrawals')
@@ -1407,5 +1492,6 @@ def notifications():
     return render_template("notifications.html", notifications=notes)
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+   app.run(debug=True, use_reloader=False)
+
 
