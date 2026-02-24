@@ -1279,19 +1279,21 @@ def worker_bank_details():
         account_number = request.form["account_number"]
         ifsc_code = request.form["ifsc_code"].upper()
 
-        # ✅ IFSC VALIDATION (SERVER)
+        # ✅ IFSC VALIDATION
         if not re.match(r"^[A-Z]{4}0[A-Z0-9]{6}$", ifsc_code):
             flash("Invalid IFSC Code", "danger")
             return redirect(url_for("worker_bank_details"))
 
+        # ✅ POSTGRESQL SAFE UPSERT
         db.session.execute(
             db.text("""
                 INSERT INTO bank_details (worker_id, bank_name, account_number, ifsc_code)
                 VALUES (:wid, :bank, :acc, :ifsc)
-                ON DUPLICATE KEY UPDATE
-                  bank_name=:bank,
-                  account_number=:acc,
-                  ifsc_code=:ifsc
+                ON CONFLICT (worker_id)
+                DO UPDATE SET
+                    bank_name = EXCLUDED.bank_name,
+                    account_number = EXCLUDED.account_number,
+                    ifsc_code = EXCLUDED.ifsc_code
             """),
             {
                 "wid": worker_id,
@@ -1300,13 +1302,13 @@ def worker_bank_details():
                 "ifsc": ifsc_code
             }
         )
+
         db.session.commit()
 
         flash("Bank details saved successfully", "success")
         return redirect(url_for("worker_dashboard"))
 
     return render_template("worker_bank_details.html")
-
 @app.route("/fix-balance-once")
 def fix_balance_once():
     complaints = Complaint.query.filter_by(
