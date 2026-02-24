@@ -779,13 +779,18 @@ def dashboard_data():
         db.session.query(Complaint.status, func.count())
         .group_by(Complaint.status).all()
     )
-    monthly = [0]*12
-    for m,c in db.session.query(func.month(Complaint.created_at), func.count())\
-            .group_by(func.month(Complaint.created_at)):
-        monthly[m-1] = c
 
-    return jsonify({"status":status, "monthly":monthly})
-# ================= RUN =================
+    monthly = [0] * 12
+
+    result = db.session.query(
+        func.extract('month', Complaint.created_at).label("month"),
+        func.count()
+    ).group_by("month").all()
+
+    for m, c in result:
+        monthly[int(m) - 1] = c
+
+    return jsonify({"status": status, "monthly": monthly})
 
 @app.route("/admin/solutions")
 def admin_solutions():
