@@ -24,6 +24,11 @@ EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
 def send_email(to, subject, body):
+    # ✅ Prevent crash if env vars missing
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("Email skipped: EMAIL_ADDRESS or EMAIL_PASSWORD missing")
+        return
+
     try:
         msg = EmailMessage()
         msg["From"] = EMAIL_ADDRESS
@@ -31,13 +36,15 @@ def send_email(to, subject, body):
         msg["Subject"] = subject
         msg.set_content(body)
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        # ✅ timeout prevents hanging request
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
 
         print("Email sent to", to)
 
     except Exception as e:
+        # ✅ DO NOT crash the app
         print("Email error:", e)
 
 # ================= APP SETUP =================
@@ -515,12 +522,16 @@ def register():
             datetime.utcnow() + timedelta(minutes=5)
         ).timestamp()
 
-        # send email
-        send_email(
-            to=email,
-            subject="Verify Your Account",
-            body=f"Your OTP is {otp}. Valid for 5 minutes."
-        )
+        # ✅ SEND EMAIL SAFELY (NO CRASH)
+        try:
+            send_email(
+                to=email,
+                subject="Verify Your Account",
+                body=f"Your OTP is {otp}. Valid for 5 minutes."
+            )
+        except Exception as e:
+            print("OTP email failed:", e)
+            print("OTP is:", otp)
 
         flash("OTP sent to your email", "success")
         step = "otp"
@@ -550,7 +561,6 @@ def register():
             return redirect(url_for("login"))
 
     return render_template("register.html", step=step)
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
