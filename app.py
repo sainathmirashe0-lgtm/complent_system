@@ -20,8 +20,8 @@ from werkzeug.utils import secure_filename
 
 # ================= EMAIL CONFIG =================
 
-EMAIL_ADDRESS = "sainathmirashe0@gmail.com"
-EMAIL_PASSWORD = "tdzafuxsfkefrmlj"  # ⚠️ Use ENV in production
+EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
 def send_email(to, subject, body):
     try:
@@ -43,7 +43,7 @@ def send_email(to, subject, body):
 # ================= APP SETUP =================
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 DISCOUNT_SLABS = [
     {"points": 100, "discount": 5},
     {"points": 200, "discount": 10},
@@ -53,7 +53,11 @@ DISCOUNT_SLABS = [
     {"points": 1000, "discount": 50},
 ]
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:@127.0.0.1:3306/complaint_system"
+db_url = os.environ.get("DATABASE_URL")
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
@@ -264,7 +268,10 @@ def generate_coupon_code():
     return "OM-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
-
+@app.route("/init-db")
+def init_db():
+    db.create_all()
+    return "Database tables created!"
 
 @app.route("/coupon", methods=["GET", "POST"])
 
@@ -1492,6 +1499,6 @@ def notifications():
     return render_template("notifications.html", notifications=notes)
 
 if __name__ == "__main__":
-   app.run(debug=True, use_reloader=False)
+    app.run()
 
 
