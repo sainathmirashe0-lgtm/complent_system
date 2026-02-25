@@ -26,11 +26,13 @@ def send_email(to, subject, body):
             from_email=os.environ.get("FROM_EMAIL"),
             to_emails=to,
             subject=subject,
-            html_content=body
+            plain_text_content=body,      # ✅ IMPORTANT
+            html_content=f"<p>{body}</p>" # ✅ SAFE HTML
         )
 
         sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
         sg.send(message)
+
         print("Email sent successfully to", to)
 
     except Exception as e:
@@ -427,7 +429,14 @@ def forgot_password():
         send_email(
             to=email,
             subject="Password Reset OTP",
-            body=f"Your OTP is {otp}. It is valid for 5 minutes."
+            body=f"""
+                Your One-Time Password (OTP) is: {otp}
+
+                ⏰ Valid for 5 minutes only.
+                ❌ Do not share this OTP with anyone.
+
+                If you did not request this, please ignore this email.
+                """
         )
 
         flash("OTP sent to your email", "success")
