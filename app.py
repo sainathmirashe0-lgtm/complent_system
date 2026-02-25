@@ -13,39 +13,28 @@ import random,string
 import re
 import os
 import base64
-import smtplib
-from email.message import EmailMessage
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 from werkzeug.utils import secure_filename
 
 
 # ================= EMAIL CONFIG =================
 
-EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
-
 def send_email(to, subject, body):
-    # ✅ Prevent crash if env vars missing
-    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
-        print("Email skipped: EMAIL_ADDRESS or EMAIL_PASSWORD missing")
-        return
-
     try:
-        msg = EmailMessage()
-        msg["From"] = EMAIL_ADDRESS
-        msg["To"] = to
-        msg["Subject"] = subject
-        msg.set_content(body)
+        message = Mail(
+            from_email=os.environ.get("FROM_EMAIL"),
+            to_emails=to,
+            subject=subject,
+            html_content=body
+        )
 
-        # ✅ timeout prevents hanging request
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            server.send_message(msg)
-
-        print("Email sent to", to)
+        sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
+        sg.send(message)
+        print("Email sent successfully to", to)
 
     except Exception as e:
-        # ✅ DO NOT crash the app
-        print("Email error:", e)
+        print("SendGrid error:", e)
 
 # ================= APP SETUP =================
 
@@ -61,9 +50,14 @@ DISCOUNT_SLABS = [
 ]
 
 db_url = os.environ.get("DATABASE_URL")
-if db_url and db_url.startswith("postgres://"):
+
+if not db_url:
+    raise Exception("DATABASE_URL is missing!")
+
+if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -401,11 +395,6 @@ def toggle_worker_status():
         "is_online": worker.is_online
     })
 
-
-@app.route("/test-email")
-def test_email():
-    send_email(EMAIL_ADDRESS, "Test Email", "Email system working ✅")
-    return "Email sent"
 
 # ================= AUTH =================
 @app.route("/forgot-password", methods=["GET", "POST"])

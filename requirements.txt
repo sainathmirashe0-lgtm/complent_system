@@ -4,3 +4,4 @@ Werkzeug
 psycopg2-binary
 reportlab
 gunicorn
+sendgrid
