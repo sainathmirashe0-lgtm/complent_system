@@ -1373,56 +1373,6 @@ def worker_bank_details():
 
     return render_template("worker_bank_details.html")
 # ================= CREATE ADMIN & WORKER =================
-@app.route("/setup-staff")
-def setup_staff():
-    from werkzeug.security import generate_password_hash
-
-    # 🔐 SECURITY CHECK (Change this key after use)
-    secret_key = request.args.get("key")
-
-    if secret_key != "sai123":
-        return "Unauthorized ❌"
-
-    created = []
-
-    # ---------- CREATE ADMIN ----------
-    if not User.query.filter_by(email="admin@gmail.com").first():
-        admin = User(
-            email="admin@gmail.com",
-            password=generate_password_hash("admin123"),
-            role="admin",
-            is_online=False,
-            balance=0,
-            reward_points=0,
-            fake_complaints=0,
-            is_blocked=False
-        )
-        db.session.add(admin)
-        created.append("Admin")
-    else:
-        created.append("Admin already exists")
-
-    # ---------- CREATE WORKER ----------
-    if not User.query.filter_by(email="worker@gmail.com").first():
-        worker = User(
-            email="worker@gmail.com",
-            password=generate_password_hash("worker123"),
-            role="worker",
-            department="Electric",
-            is_online=False,
-            balance=0,
-            reward_points=0,
-            fake_complaints=0,
-            is_blocked=False
-        )
-        db.session.add(worker)
-        created.append("Worker")
-    else:
-        created.append("Worker already exists")
-
-    db.session.commit()
-
-    return " & ".join(created) + " ✅"
 @app.route("/fix-balance-once")
 def fix_balance_once():
     complaints = Complaint.query.filter_by(
