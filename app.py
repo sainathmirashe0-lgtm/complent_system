@@ -402,7 +402,6 @@ def toggle_worker_status():
 def setup_staff():
     from werkzeug.security import generate_password_hash
 
-    # 🔐 SECURITY CHECK (Change this key after use)
     secret_key = request.args.get("key")
 
     if secret_key != "sai123":
@@ -411,10 +410,10 @@ def setup_staff():
     created = []
 
     # ---------- CREATE ADMIN ----------
-    if not User.query.filter_by(email="admin@gmail.com").first():
+    if not User.query.filter_by(email="sainathmirashe@gmail.com").first():
         admin = User(
-            email="admin@gmail.com",
-            password=generate_password_hash("admin123"),
+            email="sainathmirashe@gmail.com",
+            password=generate_password_hash("sss"),
             role="admin",
             is_online=False,
             balance=0,
@@ -423,27 +422,45 @@ def setup_staff():
             is_blocked=False
         )
         db.session.add(admin)
-        created.append("Admin")
+        created.append("Admin created")
     else:
         created.append("Admin already exists")
 
-    # ---------- CREATE WORKER ----------
+    # ---------- CREATE WORKER 1 ----------
     if not User.query.filter_by(email="worker@gmail.com").first():
         worker = User(
             email="worker@gmail.com",
-            password=generate_password_hash("worker123"),
+            password=generate_password_hash("sss"),
             role="worker",
             department="Electric",
-            is_online=False,
-            balance=0,
-            reward_points=0,
-            fake_complaints=0,
-            is_blocked=False
+            is_online=False
         )
         db.session.add(worker)
-        created.append("Worker")
-    else:
-        created.append("Worker already exists")
+        created.append("Worker Electric created")
+
+    # ---------- CREATE WORKER 2 ----------
+    if not User.query.filter_by(email="worker1@gmail.com").first():
+        worker1 = User(
+            email="worker1@gmail.com",
+            password=generate_password_hash("sss"),
+            role="worker",
+            department="Water",
+            is_online=False
+        )
+        db.session.add(worker1)
+        created.append("Worker Water created")
+
+    # ---------- CREATE WORKER 3 ----------
+    if not User.query.filter_by(email="worker2@gmail.com").first():
+        worker2 = User(
+            email="worker2@gmail.com",
+            password=generate_password_hash("sss"),
+            role="worker",
+            department="Garbage",
+            is_online=False
+        )
+        db.session.add(worker2)
+        created.append("Worker Garbage created")
 
     db.session.commit()
 
